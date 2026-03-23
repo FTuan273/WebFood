@@ -17,6 +17,10 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB successfully'))
   .catch((err) => console.error('❌ Mongoose connection failed. Error:', err.message));
 
+// Routes
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
 // Basic route
 app.get('/', (req, res) => {
   res.json({ 
