@@ -94,7 +94,7 @@ const Profile = () => {
                   </div>
                   
                   {/* LUỒNG NÂNG CẤP DÀNH CHO CUSTOMER */}
-                  {user?.role === 'Customer' && !isUpgrading && (
+                  {user?.role === 'Customer' && !isUpgrading && !user?.isMerchantPending && (
                     <button 
                       type="button" 
                       onClick={() => setIsUpgrading(true)}
@@ -102,6 +102,11 @@ const Profile = () => {
                     >
                       Đăng ký làm đối tác
                     </button>
+                  )}
+                  {user?.role === 'Customer' && user?.isMerchantPending && (
+                    <span style={{ padding: '10px 15px', color: '#fa8c16', backgroundColor: '#fff7e6', border: '1px solid #ffd591', borderRadius: '6px', fontSize: '13px', fontWeight: 600 }}>
+                      ⏳ Đang chờ duyệt
+                    </span>
                   )}
                   {isUpgrading && (
                     <button 

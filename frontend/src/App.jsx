@@ -1,3 +1,4 @@
+
 /**
  * @file App.jsx
  * @description Root Component - Cấu trúc định tuyến (Routing) và bao bọc Provider cho ứng dụng.
@@ -39,6 +40,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import RoleRoute from './components/RoleRoute';
 import NoMinglingGuard from './components/NoMinglingGuard';
 
+import AdminLayout from './components/AdminLayout';
+import Dashboard from './pages/Dashboard';
+import Users from './pages/Users';
+import Restaurants from './pages/Restaurants';
+
 import './index.css';
 
 function App() {
@@ -71,14 +77,15 @@ function App() {
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
                 
                 {/* ── Luồng Quản trị/Phân quyền (Management Flow) ─────────────── */}
-                <Route path="/admin/dashboard" element={
+                <Route path="/admin" element={
                   <RoleRoute allowedRoles={['Admin']}>
-                    <div className="dashboard-placeholder">
-                      <h1>Khu vực Quản trị Admin</h1>
-                      <p>Tính năng quản lý hệ thống tổng thể đang hoàn thiện.</p>
-                    </div>
+                    <AdminLayout />
                   </RoleRoute>
-                } />
+                }>
+                  <Route index element={<Dashboard />} />
+                  <Route path="users" element={<Users />} />
+                  <Route path="restaurants" element={<Restaurants />} />
+                </Route>
                 <Route path="/merchant/dashboard" element={
                   <RoleRoute allowedRoles={['Merchant']}>
                     <div className="dashboard-placeholder">
@@ -116,6 +123,7 @@ function App() {
         </Router>
       </CartProvider>
     </AuthProvider>
+
   );
 }
 

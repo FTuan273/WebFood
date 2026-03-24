@@ -102,6 +102,10 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    isMerchantPending: {
+      type: Boolean,
+      default: false
+    },
 
     // ─── Trường hỗ trợ tính năng Quên mật khẩu ──────────────────────────────
     // Token đã được băm (hash) bằng sha256, lưu để đối chiếu với token nhận từ URL

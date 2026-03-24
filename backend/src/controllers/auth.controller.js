@@ -58,7 +58,8 @@ const sendTokenResponse = (user, statusCode, res) => {
       openingTime:  user.openingTime,
       closingTime:  user.closingTime,
       bankAccount:  user.bankAccount,
-      bankName:     user.bankName
+      bankName:     user.bankName,
+      isMerchantPending: user.isMerchantPending
     }
   });
 };
@@ -283,9 +284,21 @@ exports.updateDetails = async (req, res) => {
       bankName:     req.body.bankName
     };
 
-    // [THÊM MỚI] Cho phép nâng cấp từ Customer lên Merchant
+    // Không cấp quyền Merchant lập tức. Chuyển sang chờ duyệt và đẩy 1 bản ghi vào Restaurant
     if (req.user.role === 'Customer' && req.body.role === 'Merchant') {
-      fieldsToUpdate.role = 'Merchant';
+      fieldsToUpdate.isMerchantPending = true;
+      
+      const Restaurant = require('../models/Restaurant');
+      const existingRestaurant = await Restaurant.findOne({ ownerId: req.user.id });
+      if (!existingRestaurant) {
+        await Restaurant.create({
+          ownerId: req.user.id,
+          name: req.body.storeName || 'Chưa đặt tên',
+          address: req.body.storeAddress || 'Chưa cung cấp địa chỉ',
+          openingHours: `${req.body.openingTime || '08:00'} - ${req.body.closingTime || '22:00'}`,
+          status: 'pending'
+        });
+      }
     }
 
     const user = await User.findByIdAndUpdate(

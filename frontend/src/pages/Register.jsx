@@ -101,14 +101,7 @@ const Register = () => {
                 <div className="auth-form-group">
                   <input type="password" name="password" className="auth-form-control" placeholder="Mật khẩu" value={formData.password} onChange={handleChange} required />
                 </div>
-                <div className="auth-form-group">
-                  <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px', color: '#666' }}>Vai trò đăng ký</label>
-                  <select name="role" className="auth-form-control" value={formData.role} onChange={handleChange} style={{ backgroundColor: 'white' }}>
-                    <option value="Customer">Khách hàng (Người mua)</option>
-                    <option value="Merchant">Chủ quán (Đối tác bán hàng)</option>
-                    <option value="Admin">Quản trị viên (Admin)</option>
-                  </select>
-                </div>
+
               </div>
 
               {/* CỘT 2: THÔNG TIN CỬA HÀNG (Chỉ hiện cho Merchant) */}

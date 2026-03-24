@@ -49,7 +49,7 @@ const Login = () => {
       // ĐIỀU HƯỚNG THÔNG MINH THEO ROLE:
       if (loggedUser?.role === 'Admin') {
         toast.info('Hệ thống nhận diện quyền Quản trị (Admin).', { autoClose: 3000 });
-        navigate('/admin/dashboard');
+        navigate('/admin');
       } 
       else if (loggedUser?.role === 'Merchant') {
         toast.info('Hệ thống nhận diện quyền Chủ quán (Merchant).', { autoClose: 3000 });
