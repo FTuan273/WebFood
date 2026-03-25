@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Store, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Store, Tag, LogOut } from 'lucide-react';
 
 const AdminLayout = () => {
   return (
@@ -21,6 +21,9 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink to="/admin/restaurants" style={navStyle}>
             <Store size={20} /> Duyệt Quán Ăn
+          </NavLink>
+          <NavLink to="/admin/categories" style={navStyle}>
+            <Tag size={20} /> Danh mục
           </NavLink>
         </nav>
         

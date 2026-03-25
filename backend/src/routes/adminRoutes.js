@@ -17,4 +17,11 @@ router.get('/restaurants/pending', adminController.getPendingRestaurants);
 router.get('/restaurants/active', adminController.getActiveRestaurants);
 router.put('/restaurants/:id/status', adminController.updateRestaurantStatus);
 
+// 4. Quản lý Danh mục Chung (CategoryFood)
+router.get('/categories', adminController.getAllCategories);
+router.post('/categories', adminController.createCategory);
+router.put('/categories/:id', adminController.updateCategory);
+router.put('/categories/:id/toggle', adminController.toggleCategoryStatus);
+router.delete('/categories/:id', adminController.deleteCategory);
+
 module.exports = router;
