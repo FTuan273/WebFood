@@ -12,8 +12,9 @@ router.get('/stats', adminController.getDashboardStats);
 router.get('/users', adminController.getAllUsers);
 router.put('/users/:id/status', adminController.toggleUserStatus);
 
-// 3. Restaurant approval
+// 3. Restaurant approval & management
 router.get('/restaurants/pending', adminController.getPendingRestaurants);
+router.get('/restaurants/active', adminController.getActiveRestaurants);
 router.put('/restaurants/:id/status', adminController.updateRestaurantStatus);
 
 module.exports = router;
