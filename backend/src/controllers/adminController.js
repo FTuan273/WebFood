@@ -64,14 +64,43 @@ exports.getPendingRestaurants = async (req, res) => {
   }
 };
 
+// Lấy danh sách Quán ăn đang hoạt động (Hoặc bị khóa)
+exports.getActiveRestaurants = async (req, res) => {
+  try {
+    const restaurants = await Restaurant.find({ status: { $in: ['approved', 'locked'] } }).populate('ownerId', 'name email phone');
+    
+    // Đếm số đơn hàng và mock rating
+    const expandedRestaurants = await Promise.all(restaurants.map(async (rest) => {
+      const totalCompletedOrders = await Order.countDocuments({ restaurantId: rest._id, status: 'completed' });
+      
+      // Chỗ này giả lập rating ngẫu nhiên từ 4.0 -> 5.0 tạm thời, về sau có Review model sẽ tính thật.
+      const mockRating = (Math.random() * (5.0 - 4.0) + 4.0).toFixed(1);
+      
+      return {
+        ...rest._doc,
+        totalCompletedOrders,
+        averageRating: Number(mockRating)
+      };
+    }));
+
+    res.json({ success: true, restaurants: expandedRestaurants });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
 exports.updateRestaurantStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // 'approved' || 'rejected' || 'locked'
+    const { status, rejectReason } = req.body; // 'approved' || 'rejected' || 'locked'
     
     const validStatuses = ['approved', 'rejected', 'locked', 'pending'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+
+    if (status === 'rejected' && rejectReason) {
+      console.log(`[Email Mock] Từ chối nhà hàng ${id}. Lý do: ${rejectReason}`);
     }
 
     const restaurant = await Restaurant.findByIdAndUpdate(id, { status }, { new: true });
