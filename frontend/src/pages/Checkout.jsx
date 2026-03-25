@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { ChevronRight, CreditCard, CheckCircle } from 'lucide-react';
+import { ChevronRight, CreditCard, Smartphone } from 'lucide-react';
+import PaymentDetails from '../components/PaymentDetails';
+import axiosInstance from '../utils/axiosInstance';
+
+const SHIP_FEE = 40000;
 
 const Checkout = () => {
   const { user } = useAuth();
-  const { cartItems, cartTotal, closeSidebar } = useCart();
+  const { cartItems, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [useMomo, setUseMomo] = useState(false);
+
+  useEffect(() => {
+    if (paymentMethod !== 'bank') setUseMomo(false);
+  }, [paymentMethod]);
   
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -19,9 +28,35 @@ const Checkout = () => {
     return cartTotal; // Có thể cộng thêm phí ship ở đây
   };
 
-  const handleCheckoutSubmit = (e) => {
+  const grandTotal = () => calculateTotal() + SHIP_FEE;
+
+  const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
+
+    if (paymentMethod === 'momo_gateway') {
+      const total = grandTotal();
+      if (total < 1000) {
+        toast.error('Số tiền thanh toán không hợp lệ');
+        return;
+      }
+      try {
+        const { data } = await axiosInstance.post('/payment/momo/create', {
+          amount: total,
+          orderInfo: `Thanh toan WebFood ${Date.now()}`,
+        });
+        if (data.payUrl) {
+          window.location.href = data.payUrl;
+          return;
+        }
+        toast.error('MoMo không trả về link thanh toán');
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Không tạo được giao dịch MoMo. Kiểm tra backend và cấu hình MOMO_*');
+      }
+      return;
+    }
+
     toast.success('Đã đặt hàng thành công!');
+    clearCart();
     navigate('/');
   };
 
@@ -138,7 +173,48 @@ const Checkout = () => {
                     <span>Chuyển khoản qua ngân hàng</span>
                   </div>
                 </label>
+
+                <label className={`radio-label ${paymentMethod === 'momo_gateway' ? 'active' : ''}`}>
+                  <div className="radio-left">
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === 'momo_gateway'}
+                      onChange={() => setPaymentMethod('momo_gateway')}
+                    />
+                    <div className="payment-icon"><Smartphone size={20} /></div>
+                    <span>Ví MoMo (cổng thanh toán)</span>
+                  </div>
+                </label>
               </div>
+
+              {paymentMethod === 'bank' && (
+                <PaymentDetails
+                  variant="bank"
+                  grandTotal={grandTotal()}
+                  useMomo={useMomo}
+                  onMomoToggle={setUseMomo}
+                />
+              )}
+
+              {paymentMethod === 'momo_gateway' && (
+                <div
+                  className="payment-gateway-hint"
+                  style={{
+                    marginTop: 16,
+                    padding: '14px 16px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'rgba(209, 160, 84, 0.06)',
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <strong style={{ display: 'block', marginBottom: 8 }}>Thanh toán qua MoMo</strong>
+                  Sau khi bấm <strong>ĐẶT HÀNG</strong>, bạn sẽ được chuyển tới trang thanh toán MoMo (ứng dụng ví hoặc QR).
+                  Khi hoàn tất, hệ thống sẽ đưa bạn về trang kết quả.
+                </div>
+              )}
             </div>
 
             {/* Cột 3: Tóm tắt đơn hàng */}
@@ -178,7 +254,7 @@ const Checkout = () => {
                 </div>
                 <div className="summary-row total-row">
                   <span>Tổng cộng</span>
-                  <span className="final-price">{formatPrice(calculateTotal() + 40000)}</span>
+                  <span className="final-price">{formatPrice(grandTotal())}</span>
                 </div>
               </div>
               
