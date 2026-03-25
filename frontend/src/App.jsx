@@ -44,6 +44,7 @@ import AdminLayout from './components/AdminLayout';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Restaurants from './pages/Restaurants';
+import Categories from './pages/Categories';
 
 import './index.css';
 
@@ -85,6 +86,7 @@ function App() {
                   <Route index element={<Dashboard />} />
                   <Route path="users" element={<Users />} />
                   <Route path="restaurants" element={<Restaurants />} />
+                  <Route path="categories" element={<Categories />} />
                 </Route>
                 <Route path="/merchant/dashboard" element={
                   <RoleRoute allowedRoles={['Merchant']}>

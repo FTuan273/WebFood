@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const Restaurant = require('../models/Restaurant');
 const Order = require('../models/Order');
+const CategoryFood = require('../models/CategoryFood');
 
 // 1. Thống kê tổng quan
 exports.getDashboardStats = async (req, res) => {
@@ -117,5 +118,80 @@ exports.updateRestaurantStatus = async (req, res) => {
     res.json({ success: true, message: `Restaurant ${status} successfully`, restaurant });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Quản lý Danh mục Chung (CategoryFood) - Chỉ dành cho Super Admin
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/admin/categories — Lấy tất cả danh mục
+exports.getAllCategories = async (req, res) => {
+  try {
+    const categories = await CategoryFood.find().sort({ createdAt: -1 });
+    res.json({ success: true, categories });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};
+
+// POST /api/admin/categories — Tạo danh mục mới
+exports.createCategory = async (req, res) => {
+  try {
+    const { name, icon, description } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Tên danh mục không được để trống' });
+    }
+    const existing = await CategoryFood.findOne({ name: name.trim() });
+    if (existing) {
+      return res.status(409).json({ success: false, message: 'Danh mục đã tồn tại' });
+    }
+    const category = await CategoryFood.create({ name: name.trim(), icon, description });
+    res.status(201).json({ success: true, message: 'Tạo danh mục thành công', category });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};
+
+// PUT /api/admin/categories/:id — Cập nhật danh mục
+exports.updateCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, icon, description } = req.body;
+    const category = await CategoryFood.findByIdAndUpdate(
+      id,
+      { name: name?.trim(), icon, description },
+      { new: true, runValidators: true }
+    );
+    if (!category) return res.status(404).json({ success: false, message: 'Không tìm thấy danh mục' });
+    res.json({ success: true, message: 'Cập nhật thành công', category });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};
+
+// PUT /api/admin/categories/:id/toggle — Bật/Tắt trạng thái
+exports.toggleCategoryStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const category = await CategoryFood.findById(id);
+    if (!category) return res.status(404).json({ success: false, message: 'Không tìm thấy danh mục' });
+    category.isActive = !category.isActive;
+    await category.save();
+    res.json({ success: true, message: `Danh mục đã ${category.isActive ? 'kích hoạt' : 'vô hiệu hóa'}`, category });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};
+
+// DELETE /api/admin/categories/:id — Xóa danh mục
+exports.deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const category = await CategoryFood.findByIdAndDelete(id);
+    if (!category) return res.status(404).json({ success: false, message: 'Không tìm thấy danh mục' });
+    res.json({ success: true, message: 'Đã xóa danh mục' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
 };

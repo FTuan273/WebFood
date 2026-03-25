@@ -14,7 +14,7 @@ const Restaurants = () => {
 
   const fetchRestaurants = () => {
     setLoading(true);
-    const endpoint = activeTab === 'pending' 
+    const endpoint = activeTab === 'pending'
       ? 'http://localhost:5000/api/admin/restaurants/pending'
       : 'http://localhost:5000/api/admin/restaurants/active';
 
@@ -92,11 +92,11 @@ const Restaurants = () => {
                 PENDING
               </span>
             </div>
-            
+
             <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '10px', marginBottom: '15px', fontSize: '0.95rem', color: '#57606f', borderLeft: '4px solid #0984e3' }}>
-              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={16} color="#0984e3"/> <strong>Đại diện:</strong> {res.ownerId?.name || 'Không rõ'}</div>
-              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={16} color="#0984e3"/> <strong>Email:</strong> {res.ownerId?.email || 'Không rõ'}</div>
-              {res.ownerId?.phone && <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Phone size={16} color="#0984e3"/> <strong>SĐT:</strong> {res.ownerId.phone}</div>}
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={16} color="#0984e3" /> <strong>Đại diện:</strong> {res.ownerId?.name || 'Không rõ'}</div>
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={16} color="#0984e3" /> <strong>Email:</strong> {res.ownerId?.email || 'Không rõ'}</div>
+              {res.ownerId?.phone && <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Phone size={16} color="#0984e3" /> <strong>SĐT:</strong> {res.ownerId.phone}</div>}
             </div>
 
             {/* Placeholder GPKD / CCCD */}
@@ -112,7 +112,7 @@ const Restaurants = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '15px', marginTop: 'auto' }}>
-              <button 
+              <button
                 onClick={() => updateStatus(res._id, 'approved')}
                 style={{ flex: 1, padding: '12px', backgroundColor: '#2ed573', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'filter 0.2s', fontSize: '1rem' }}
                 onMouseOver={e => e.currentTarget.style.filter = 'brightness(1.1)'}
@@ -120,7 +120,7 @@ const Restaurants = () => {
               >
                 <Check size={20} /> Duyệt
               </button>
-              <button 
+              <button
                 onClick={() => handleOpenRejectModal(res._id)}
                 style={{ flex: 1, padding: '12px', backgroundColor: '#ff4757', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'filter 0.2s', fontSize: '1rem' }}
                 onMouseOver={e => e.currentTarget.style.filter = 'brightness(1.1)'}
@@ -182,7 +182,7 @@ const Restaurants = () => {
                 </td>
                 <td style={{ padding: '15px 20px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-                    <button 
+                    <button
                       title="Xem doanh thu"
                       onClick={() => alert(`Xem chi tiết doanh thu của ${res.name} (Đang phát triển)`)}
                       style={{ padding: '8px', backgroundColor: '#f1f2f6', color: '#2f3542', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'background 0.2s' }}
@@ -192,7 +192,7 @@ const Restaurants = () => {
                       <Eye size={18} />
                     </button>
                     {res.status === 'locked' ? (
-                      <button 
+                      <button
                         title="Mở khóa"
                         onClick={() => updateStatus(res._id, 'approved')}
                         style={{ padding: '8px', backgroundColor: '#2ed573', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'filter 0.2s' }}
@@ -202,7 +202,7 @@ const Restaurants = () => {
                         <Unlock size={18} />
                       </button>
                     ) : (
-                      <button 
+                      <button
                         title="Khóa quán"
                         onClick={() => updateStatus(res._id, 'locked')}
                         style={{ padding: '8px', backgroundColor: '#ff4757', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'filter 0.2s' }}
@@ -225,44 +225,44 @@ const Restaurants = () => {
   return (
     <div style={{ position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-        <h2 style={{ fontSize: '2rem', color: '#2f3542', margin: 0 }}>Quản lý Quán Ăn (Merchant)</h2>
+        <h2 style={{ fontSize: '2rem', color: '#2f3542', margin: 0 }}>Quản Lý Quán Ăn </h2>
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '25px', borderBottom: '2px solid #f1f2f6', paddingBottom: '15px' }}>
-        <button 
+        <button
           onClick={() => setActiveTab('pending')}
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: activeTab === 'pending' ? '#0984e3' : 'transparent', 
-            color: activeTab === 'pending' ? 'white' : '#57606f', 
-            border: 'none', 
-            borderRadius: '8px', 
-            cursor: 'pointer', 
-            fontWeight: '600', 
+          style={{
+            padding: '10px 20px',
+            backgroundColor: activeTab === 'pending' ? '#0984e3' : 'transparent',
+            color: activeTab === 'pending' ? 'white' : '#57606f',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600',
             fontSize: '1rem',
             transition: 'all 0.2s'
           }}
         >
           Duyệt Quán Mới
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('active')}
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: activeTab === 'active' ? '#0984e3' : 'transparent', 
-            color: activeTab === 'active' ? 'white' : '#57606f', 
-            border: 'none', 
-            borderRadius: '8px', 
-            cursor: 'pointer', 
-            fontWeight: '600', 
+          style={{
+            padding: '10px 20px',
+            backgroundColor: activeTab === 'active' ? '#0984e3' : 'transparent',
+            color: activeTab === 'active' ? 'white' : '#57606f',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600',
             fontSize: '1rem',
             transition: 'all 0.2s'
           }}
         >
-          Danh sách Quán Active
+          Danh Sách Quán Đã Duyệt
         </button>
       </div>
-      
+
       {loading ? (
         <p>Đang tải dữ liệu...</p>
       ) : activeTab === 'pending' ? renderPendingTab() : renderActiveTab()}
@@ -272,20 +272,20 @@ const Restaurants = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '400px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
             <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#2f3542' }}>Lý do từ chối</h3>
-            <textarea 
+            <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="VD: Không giấy phép kinh doanh, thông tin mập mờ..."
               style={{ width: '100%', padding: '12px', border: '1px solid #ced6e0', borderRadius: '8px', height: '100px', resize: 'none', marginBottom: '20px', boxSizing: 'border-box', fontFamily: 'inherit' }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button 
+              <button
                 onClick={() => { setShowRejectModal(false); setRejectReason(''); }}
                 style={{ padding: '10px 20px', border: 'none', backgroundColor: '#f1f2f6', color: '#2f3542', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
               >
                 Hủy
               </button>
-              <button 
+              <button
                 onClick={handleConfirmReject}
                 style={{ padding: '10px 20px', border: 'none', backgroundColor: '#ff4757', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
               >
