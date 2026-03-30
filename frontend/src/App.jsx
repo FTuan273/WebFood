@@ -25,6 +25,7 @@ import Home from './pages/Home';
 import Menu from './pages/Menu';
 import ProductDetail from './pages/ProductDetail';
 import Checkout from './pages/Checkout';
+import MoMoReturn from './pages/MoMoReturn';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -70,6 +71,7 @@ function App() {
                 <Route path="/product/:id" element={<NoMinglingGuard><ProductDetail /></NoMinglingGuard>} />
                 <Route path="/restaurant/:id" element={<NoMinglingGuard><RestaurantDetail /></NoMinglingGuard>} />
                 <Route path="/checkout" element={<NoMinglingGuard><Checkout /></NoMinglingGuard>} />
+                <Route path="/payment/momo/return" element={<MoMoReturn />} />
                 
                 {/* ── Luồng Xác thực (Auth Flow) ────────────────────────────────── */}
                 <Route path="/login" element={<Login />} />
