@@ -18,15 +18,11 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB successfully'))
   .catch((err) => console.error('❌ Mongoose connection failed. Error:', err.message));
 
-<<<<<<< Updated upstream
-=======
 // Routes
 const adminRoutes = require('./routes/adminRoutes');
 const merchantRoutes = require('./routes/merchantRoutes');
 app.use('/api/admin', adminRoutes);
 app.use('/api/merchant', merchantRoutes);
-
->>>>>>> Stashed changes
 // Basic route
 app.get('/', (req, res) => {
   res.json({ 
