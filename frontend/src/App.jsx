@@ -3,7 +3,6 @@ import AdminLayout from './components/AdminLayout';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Restaurants from './pages/Restaurants';
-
 // Merchant Components
 import MerchantLayout from './components/MerchantLayout';
 import MerchantDashboard from './pages/merchant/Dashboard';
@@ -23,7 +22,6 @@ function App() {
           <Route path="users" element={<Users />} />
           <Route path="restaurants" element={<Restaurants />} />
         </Route>
-
         {/* Merchant Section */}
         <Route path="/merchant" element={<MerchantLayout />}>
           <Route index element={<MerchantDashboard />} />
