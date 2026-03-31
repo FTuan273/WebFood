@@ -4,10 +4,18 @@ import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 
+// Merchant Components
+import MerchantLayout from './components/MerchantLayout';
+import MerchantDashboard from './pages/merchant/Dashboard';
+import MerchantOrders from './pages/merchant/Orders';
+import MerchantMenu from './pages/merchant/Menu';
+import MerchantStoreInfo from './pages/merchant/StoreInfo';
+
 function App() {
   const [count, setCount] = useState(0)
 
   return (
+<<<<<<< Updated upstream
     <>
       <section id="center">
         <div className="hero">
@@ -116,6 +124,29 @@ function App() {
       <section id="spacer"></section>
     </>
   )
+=======
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/admin" replace />} />
+        
+        {/* Admin Section */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="users" element={<Users />} />
+          <Route path="restaurants" element={<Restaurants />} />
+        </Route>
+
+        {/* Merchant Section */}
+        <Route path="/merchant" element={<MerchantLayout />}>
+          <Route index element={<MerchantDashboard />} />
+          <Route path="orders" element={<MerchantOrders />} />
+          <Route path="menu" element={<MerchantMenu />} />
+          <Route path="store" element={<MerchantStoreInfo />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+>>>>>>> Stashed changes
 }
 
 export default App
