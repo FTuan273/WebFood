@@ -41,6 +41,8 @@ app.use('/api/auth', require('./routes/auth.routes'));
 // Routes từ Admin (Gộp từ main)
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
+try { app.use('/api/payment', require('./routes/payment.routes')); } catch (e) {}
+app.use('/api/customer', require('./routes/customer.routes'));
 app.get('/', (req, res) => {
   res.json({
     message: 'WebFood API đang hoạt động',
