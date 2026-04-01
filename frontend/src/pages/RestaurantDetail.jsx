@@ -76,7 +76,7 @@ const RestaurantDetail = () => {
             <div style={{ flexGrow: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
                 <span style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold', borderRadius: '3px', textTransform: 'uppercase' }}>Đối Tác</span>
-                <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>{mockRestaurant.name}</h1>
+                <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>{mockRestaurant.name} (ID: {id})</h1>
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '15px' }}>Cơm Tấm, Món Việt</p>
               

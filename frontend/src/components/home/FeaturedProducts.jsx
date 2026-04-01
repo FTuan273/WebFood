@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { ShoppingCart, Heart } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -24,15 +23,8 @@ const FeaturedProducts = () => {
         </div>
 
         <div className="product-grid">
-          {featuredProducts.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.4 }}
-              className="product-card"
-            >
+          {featuredProducts.map((product) => (
+            <div key={product.id} className="product-card">
               {product.isNew && <span className="product-badge badge-new">New</span>}
               {product.badge && <span className="product-badge badge-sale">{product.badge}</span>}
               
@@ -53,7 +45,7 @@ const FeaturedProducts = () => {
                   {product.oldPrice && <span className="product-old-price">{product.oldPrice}</span>}
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
         

@@ -67,7 +67,7 @@ const ProductDetail = () => {
 
           {/* Info */}
           <div className="product-info-wrap">
-            <h1 className="detail-title">{product.name}</h1>
+            <h1 className="detail-title">{product.name} {id ? `(#${id})` : ''}</h1>
             
             <div className="product-meta">
               <span>Thương hiệu: <strong style={{color: 'var(--primary)'}}>{product.vendor}</strong></span>

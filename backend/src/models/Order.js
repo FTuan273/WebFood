@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
 
 const orderItemSchema = new mongoose.Schema({
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  productId: { type: String, required: true }, // Accept both ObjectId string or numeric/mock IDs for demo
   quantity: { type: Number, required: true, min: 1 },
   price: { type: Number, required: true } // Giá cố định lúc đặt đơn, tránh bị thay đổi menu về sau
 });
 
 const orderSchema = new mongoose.Schema({
-  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  restaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: true },
+  customerId: { type: String, required: true }, // Hỗ trợ demo dạng số/string và ObjectId
+  restaurantId: { type: String, required: true }, // Hỗ trợ demo dạng số/string và ObjectId
   items: [orderItemSchema],
   totalPrice: { type: Number, required: true },
   status: {

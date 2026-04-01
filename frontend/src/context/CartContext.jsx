@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useContext } from 'react';
 
 const CartContext = createContext();
@@ -6,7 +7,7 @@ export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [cartItems, setCartItems] = useState([]);
+  const [ cartItems, setCartItems] = useState([]);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const openSidebar = () => setIsSidebarOpen(true);

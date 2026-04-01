@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Clock, MapPin, Tag, ChevronRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import ActiveOrderBar from '../components/ActiveOrderBar';
 
 const mockBanners = [
   'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop',
@@ -67,9 +69,71 @@ const mockRestaurants = [
 ];
 
 const Home = () => {
+  const { orderStatusNotification } = useAuth();
+
+  const orderStatuses = ['pending', 'confirmed', 'preparing', 'delivering', 'completed'];
+  const statusLabels = {
+    pending: 'Chờ nhận',
+    confirmed: 'Xác nhận',
+    preparing: 'Đang chuẩn bị',
+    delivering: 'Đang giao',
+    completed: 'Hoàn tất'
+  };
+
+  const currentStatus = orderStatusNotification?.status || null;
+  const currentStep = orderStatuses.indexOf(currentStatus);
+
+  const statusText = currentStatus
+    ? currentStatus === 'delivering'
+      ? 'Shipper đang mang món ngon đến với bạn!'
+      : currentStatus === 'completed'
+        ? 'Đơn hàng đã hoàn tất. Cảm ơn bạn đã đặt hàng!'
+        : `Đơn hàng đang ở trạng thái: ${statusLabels[currentStatus] || currentStatus}`
+    : '';
+
   return (
     <div className="market-page" style={{ backgroundColor: 'var(--bg-section)', minHeight: '100vh', paddingBottom: '60px' }}>
-      
+      {currentStep >= 0 && (
+        <section style={{ margin: '14px auto', maxWidth: 1100, padding: '8px 14px', borderRadius: 14, boxShadow: '0 1px 10px rgba(44,62,80,0.12)', backgroundColor: '#ffffff' }}>
+          <h3 style={{ marginTop: 0, marginBottom: 10, fontSize: 16, color: '#1f2937' }}>Theo dõi đơn hàng của bạn</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
+            {orderStatuses.map((step, idx) => {
+              const active = idx <= currentStep;
+              return (
+                <div key={step} style={{ minWidth: 90, textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                  <div style={{
+                    margin: '0 auto 6px',
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    lineHeight: '24px',
+                    color: '#fff',
+                    backgroundColor: active ? '#22c55e' : '#cbd5e1',
+                    fontSize: 12,
+                    fontWeight: 700
+                  }}>
+                    {idx + 1}
+                  </div>
+                  <div style={{ fontSize: 11, color: active ? '#0f172a' : '#64748b', fontWeight: active ? 600 : 400 }}>{statusLabels[step]}</div>
+                  {idx < orderStatuses.length - 1 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 12,
+                      right: -8,
+                      width: 70,
+                      height: 2,
+                      background: idx < currentStep ? '#22c55e' : '#cbd5e1',
+                      zIndex: -1
+                    }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ margin: '8px 0 0 0', fontSize: 13, color: '#334155' }}>{statusText}</p>
+        </section>
+      )}
+
       {/* 1. Banners Section */}
       <section className="market-banner-section">
         <div className="container">
@@ -98,6 +162,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <ActiveOrderBar />
 
       {/* 3. Nearby Restaurants */}
       <section className="restaurant-listing-section">

@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axiosInstance from '../utils/axiosInstance';
-import { useAuth } from '../context/AuthContext';
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -29,8 +28,8 @@ const ResetPassword = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Trở về trang chủ và Reload để Context cập nhật (Cách nhanh nhất cho Auth Reset)
-        window.location.href = '/';
+        // Trở về trang chủ và reload qua navigate
+        navigate('/');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Link khôi phục không hợp lệ hoặc đã hết hạn!');

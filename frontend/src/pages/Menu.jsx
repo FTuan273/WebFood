@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { ShoppingCart, Heart, Search, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -118,12 +117,9 @@ const Menu = () => {
 
             {/* Product Grid */}
             <div className="product-grid menu-product-grid">
-              {filteredProducts.map((product, index) => (
-                <motion.div
+              {filteredProducts.map((product) => (
+                <div
                   key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
                   className="product-card"
                 >
                   <div className="product-img-wrapper">
@@ -142,7 +138,7 @@ const Menu = () => {
                       <span className="product-price">{formatPrice(product.price)}</span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </main>

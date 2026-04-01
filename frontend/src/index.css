@@ -459,6 +459,30 @@ h1, h2, h3, h4, .serif {
   }
 }
 
+.order-status-banner {
+  width: 100%;
+  background-color: #145C7F;
+  color: white;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  position: sticky;
+  top: calc(80px); /* dưới header */
+  z-index: 999;
+}
+
+.order-status-banner span {
+  display: inline-block;
+  max-width: 1000px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
 @media (max-width: 576px) {
   .footer-grid {
     grid-template-columns: 1fr;

@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -18,26 +17,14 @@ const CartSidebar = () => {
   };
 
   return (
-    <AnimatePresence>
+    <>
       {isSidebarOpen && (
         <>
           {/* Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="cart-overlay"
-            onClick={closeSidebar}
-          />
+          <div className="cart-overlay" onClick={closeSidebar} />
 
           {/* Sidebar */}
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'tween', duration: 0.3 }}
-            className="cart-sidebar"
-          >
+          <div className="cart-sidebar">
             <div className="cart-header">
               <h3>Giỏ hàng của bạn</h3>
               <button className="close-cart-btn" onClick={closeSidebar}>
@@ -89,10 +76,10 @@ const CartSidebar = () => {
                 </button>
               </div>
             )}
-          </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
+    </>
   );
 };
 

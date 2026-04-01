@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { Check, X, Building, Lock, Unlock, Eye, MapPin, Phone, Mail, User, FileText, Camera } from 'lucide-react';
 
@@ -12,7 +12,7 @@ const Restaurants = () => {
   const [selectedRejectId, setSelectedRejectId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  const fetchRestaurants = () => {
+  const fetchRestaurants = useCallback(() => {
     setLoading(true);
     const endpoint = activeTab === 'pending'
       ? 'http://localhost:5000/api/admin/restaurants/pending'
@@ -27,11 +27,15 @@ const Restaurants = () => {
         console.error(err);
         setLoading(false);
       });
-  };
+  }, [activeTab]);
 
   useEffect(() => {
-    fetchRestaurants();
-  }, [activeTab]);
+    const loadRestaurants = async () => {
+      await fetchRestaurants();
+    };
+
+    loadRestaurants();
+  }, [fetchRestaurants]);
 
   const updateStatus = (id, status, reason = '') => {
     let confirmMsg = '';

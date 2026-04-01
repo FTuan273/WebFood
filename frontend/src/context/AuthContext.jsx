@@ -16,7 +16,9 @@
  * @version 2.0.0
  */
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
+import { io } from 'socket.io-client';
 import axiosInstance from '../utils/axiosInstance';
 
 // Khởi tạo Context
@@ -28,23 +30,106 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [orderStatusNotification, setOrderStatusNotification] = useState(null);
+  const socketRef = useRef(null);
 
   /**
    * Khởi tạo: Kiểm tra xem người dùng đã đăng nhập trước đó chưa (LocalStorage).
    */
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const token      = localStorage.getItem('token');
-    
-    if (storedUser && token) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Lỗi parse dữ liệu User từ localStorage", e);
+    const initializeAuth = async () => {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+
+      if (storedUser && token) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error("Lỗi parse dữ liệu User từ localStorage", e);
+        }
       }
-    }
-    setLoading(false);
+
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
+
+  useEffect(() => {
+    const cleanSocket = () => {
+      if (socketRef.current) {
+        socketRef.current.off('orderStatusUpdated');
+        socketRef.current.off('new-order-received');
+        socketRef.current.off('connect_error');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+
+    if (!user || !user._id) {
+      cleanSocket();
+      setOrderStatusNotification(null);
+      return;
+    }
+
+    const setupSocket = () => {
+      const socket = io('http://localhost:5000', { transports: ['websocket', 'polling'] });
+      socketRef.current = socket;
+
+      socket.on('connect', () => {
+        socket.emit('join-customer-room', user._id);
+        if (user.lastOrderId) {
+          socket.emit('join-order-room', user.lastOrderId);
+        }
+      });
+
+      socket.on('orderStatusUpdated', (payload) => {
+        setOrderStatusNotification({
+          orderId: payload?.orderId || null,
+          status: payload?.status || null,
+          message: payload?.message || `Đơn hàng ${payload?.orderId || ''} đã cập nhật: ${payload?.status || ''}`,
+          updatedAt: new Date().toISOString()
+        });
+      });
+
+      socket.on('new-order-received', (payload) => {
+        setOrderStatusNotification({
+          orderId: payload?.orderId || null,
+          status: payload?.status || 'pending',
+          message: payload?.message || `Có đơn mới ${payload?.orderId || ''}`,
+          updatedAt: new Date().toISOString()
+        });
+      });
+
+      socket.on('connect_error', (error) => {
+        console.warn('Socket Connect Error:', error);
+      });
+    };
+
+    const fetchLatestOrder = async () => {
+      try {
+        const res = await axiosInstance.get(`/orders?customerId=${user._id}`);
+        const latestOrder = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
+        if (latestOrder) {
+          setOrderStatusNotification({
+            orderId: latestOrder._id,
+            status: latestOrder.status,
+            message: `Đơn hàng #${latestOrder._id.slice(-6)}: ${latestOrder.status}`,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('Lỗi lấy đơn mới nhất tại AuthContext:', error);
+      }
+    };
+
+    setupSocket();
+    fetchLatestOrder();
+
+    return () => {
+      cleanSocket();
+    };
+  }, [user]);
 
   /**
    * Xử lý Đăng nhập.
@@ -128,7 +213,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, loading, orderStatusNotification, setOrderStatusNotification }}>
       {children}
     </AuthContext.Provider>
   );
