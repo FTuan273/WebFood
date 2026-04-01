@@ -43,6 +43,7 @@ const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
 
 app.use('/api/payment', require('./routes/payment.routes'));
+app.use('/api/customer', require('./routes/customer.routes'));
 app.get('/', (req, res) => {
   res.json({
     message: 'WebFood API đang hoạt động',

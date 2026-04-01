@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { Star, Clock, MapPin, Tag, ChevronRight } from 'lucide-react';
 
 const mockBanners = [
@@ -8,65 +9,32 @@ const mockBanners = [
   'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=2000&auto=format&fit=crop'
 ];
 
-const mockCategories = [
-  { id: 1, name: 'Cơm', image: 'https://images.unsplash.com/photo-1623341214825-9f4f963727da?q=80&w=200&auto=format&fit=crop' },
-  { id: 2, name: 'Trà sữa', image: 'https://images.unsplash.com/photo-1558853659-7010264104d4?q=80&w=200&auto=format&fit=crop' },
-  { id: 3, name: 'Bún / Phở', image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cb438?q=80&w=200&auto=format&fit=crop' },
-  { id: 4, name: 'Gà rán', image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=200&auto=format&fit=crop' },
-  { id: 5, name: 'Ăn vặt', image: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?q=80&w=200&auto=format&fit=crop' },
-  { id: 6, name: 'Pizza', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=200&auto=format&fit=crop' },
-  { id: 7, name: 'Mì cay', image: 'https://images.unsplash.com/photo-1612927601601-6638404737ce?q=80&w=200&auto=format&fit=crop' },
-  { id: 8, name: 'Cà phê', image: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=200&auto=format&fit=crop' }
-];
+// Removed mock categories, we rely on API data
 
-const mockRestaurants = [
-  {
-    id: 1,
-    name: 'Cơm Tấm Phúc Lộc Thọ - Kha Vạn Cân',
-    image: 'https://images.unsplash.com/photo-1543826173-70651703c5a4?q=80&w=800&auto=format&fit=crop',
-    rating: 4.8,
-    reviews: 1200,
-    distance: '1.2 km',
-    time: '15 phút',
-    tags: ['Freeship', 'Giảm 30K'],
-    hasFreeship: true
-  },
-  {
-    id: 2,
-    name: 'KFC - Gà Rán & Bơ Gơ - Võ Văn Ngân',
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=800&auto=format&fit=crop',
-    rating: 4.5,
-    reviews: 850,
-    distance: '2.5 km',
-    time: '25 phút',
-    tags: ['Giảm 50%'],
-    hasFreeship: false
-  },
-  {
-    id: 3,
-    name: 'Phúc Long Coffee & Tea - Vincom Thủ Đức',
-    image: 'https://images.unsplash.com/photo-1558853659-7010264104d4?q=80&w=800&auto=format&fit=crop',
-    rating: 4.9,
-    reviews: 3200,
-    distance: '3.0 km',
-    time: '30 phút',
-    tags: ['Freeship'],
-    hasFreeship: true
-  },
-  {
-    id: 4,
-    name: 'Bún Bò Huế 31 - Hoàng Diệu 2',
-    image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cb438?q=80&w=800&auto=format&fit=crop',
-    rating: 4.3,
-    reviews: 450,
-    distance: '0.8 km',
-    time: '12 phút',
-    tags: ['Mua 1 tặng 1'],
-    hasFreeship: false
-  }
-];
+// End of mock data
 
 const Home = () => {
+  const [categories, setCategories] = useState([]);
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/customer/home');
+        if (res.data.success) {
+          setCategories(res.data.categories || []);
+          setRestaurants(res.data.featuredRestaurants || []);
+        }
+      } catch (err) {
+        console.error('Error fetching home data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHomeData();
+  }, []);
+
   return (
     <div className="market-page" style={{ backgroundColor: 'var(--bg-section)', minHeight: '100vh', paddingBottom: '60px' }}>
       
@@ -87,10 +55,10 @@ const Home = () => {
       <section className="market-category-section">
         <div className="container">
           <div className="market-cat-grid">
-            {mockCategories.map((cat) => (
-              <Link to={`/menu?category=${cat.id}`} key={cat.id} className="market-cat-item">
-                <div className="market-cat-icon">
-                  <img src={cat.image} alt={cat.name} />
+            {categories.map((cat) => (
+              <Link to={`/menu?search=${encodeURIComponent(cat.name)}`} key={cat._id} className="market-cat-item">
+                <div className="market-cat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
+                  {cat.icon || '🍽️'}
                 </div>
                 <span className="market-cat-name">{cat.name}</span>
               </Link>
@@ -109,40 +77,33 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="restaurant-grid">
-            {mockRestaurants.map((res) => (
-              <Link to={`/restaurant/${res.id}`} key={res.id} className="restaurant-card">
-                <div className="res-img-wrap">
-                  <img src={res.image} alt={res.name} className="res-img" />
-                  {res.hasFreeship && <span className="res-promo-badge">Freeship Extra</span>}
-                </div>
-                <div className="res-info">
-                  <h3 className="res-name">{res.name}</h3>
-                  <div className="res-meta">
-                    <div className="res-rating">
-                      <Star size={14} fill="#ffc107" />
-                      <span>{res.rating}</span>
-                    </div>
-                    <div className="res-distance">
-                      <MapPin size={12} color="var(--text-muted)" style={{ display: 'inline', marginRight: '4px' }} />
-                      {res.distance}
-                    </div>
-                    <div className="res-time">
-                      <Clock size={12} color="var(--text-muted)" style={{ display: 'inline', marginRight: '4px' }} />
-                      {res.time}
+          {loading ? (
+             <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải danh sách quán...</div>
+          ) : (
+            <div className="restaurant-grid">
+              {restaurants.map((res) => (
+                <Link to={`/menu`} key={res._id} className="restaurant-card">
+                  <div className="res-img-wrap">
+                    <img src={res.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=800'} alt={res.name} className="res-img" />
+                    {res.hasFreeship && <span className="res-promo-badge">Freeship Extra</span>}
+                  </div>
+                  <div className="res-info">
+                    <h3 className="res-name">{res.name}</h3>
+                    <div className="res-meta">
+                      <div className="res-rating">
+                        <Star size={14} fill="#ffc107" />
+                        <span>{res.averageRating || 'N/A'}</span>
+                      </div>
+                      <div className="res-distance">
+                        <MapPin size={12} color="var(--text-muted)" style={{ display: 'inline', marginRight: '4px' }} />
+                        {res.address || 'Đang cập nhật'}
+                      </div>
                     </div>
                   </div>
-                  <div className="res-tags">
-                    {res.tags.map((tag, idx) => (
-                      <span key={idx} className={`res-tag ${tag.toLowerCase().includes('freeship') ? 'tag-freeship' : ''}`}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
