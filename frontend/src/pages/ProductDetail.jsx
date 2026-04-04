@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Share2, Plus, Minus, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
-
 import axios from 'axios';
+import { getImageUrl } from '../utils/imageUrl';
 
 // Function to format price
 const formatPrice = (price) => {
@@ -112,7 +112,7 @@ const ProductDetail = () => {
           {/* Images */}
           <div className="product-gallery">
             <div className="main-image">
-              <img src={product.image || 'https://images.unsplash.com/photo-1544025162-8315ea07f440?w=800'} alt={product.name} />
+              <img src={getImageUrl(product.image)} alt={product.name} />
             </div>
           </div>
 

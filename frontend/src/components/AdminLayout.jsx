@@ -1,8 +1,12 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, Store, Tag, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const AdminLayout = () => {
+  const { logout } = useAuth();
+  const handleLogout = () => { logout(); window.location.href = '/login'; };
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f1f2f6', fontFamily: 'Inter, sans-serif' }}>
       {/* Sidebar */}
@@ -27,7 +31,7 @@ const AdminLayout = () => {
           </NavLink>
         </nav>
         
-        <div style={{ padding: '20px', borderTop: '1px solid #57606f', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', color: '#ced6e0', transition: 'color 0.2s' }}>
+        <div onClick={handleLogout} style={{ padding: '20px', borderTop: '1px solid #57606f', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', color: '#ced6e0', transition: 'color 0.2s' }}>
           <LogOut size={20} /> Đăng xuất
         </div>
       </aside>

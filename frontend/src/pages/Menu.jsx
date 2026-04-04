@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ShoppingCart, Heart, Search, Filter } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { getImageUrl } from '../utils/imageUrl';
 
 // End static data
 
@@ -165,7 +166,7 @@ const Menu = () => {
                     className="product-card"
                   >
                     <div className="product-img-wrapper">
-                      <img src={product.image || 'https://images.unsplash.com/photo-1544025162-8315ea07f440?w=500'} alt={product.name} className="product-img" />
+                      <img src={getImageUrl(product.image)} alt={product.name} className="product-img" />
                       <div className="product-actions-hover">
                         <button className="icon-btn" title="Yêu thích"><Heart size={18} /></button>
                         <button className="icon-btn" title="Thêm vào giỏ">
