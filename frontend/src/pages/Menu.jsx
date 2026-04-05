@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { ShoppingCart, Heart, Search, Filter } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-
-// End static data
+import { getImageUrl } from '../utils/imageUrl';
 
 const categories = [
   { id: 'all', name: 'Tất cả món ăn' },
@@ -18,7 +17,7 @@ const categories = [
 const Menu = () => {
   const [searchParams] = useSearchParams();
   const rawSearch = searchParams.get('search') || '';
-  
+
   const [activeCategory, setActiveCategory] = useState(rawSearch ? rawSearch : 'all');
   const [sortBy, setSortBy] = useState('default');
   const [priceRange, setPriceRange] = useState(''); // 'under-100', '100-300', '300-500', 'over-500'
@@ -31,11 +30,9 @@ const Menu = () => {
       setLoading(true);
       try {
         let params = {};
-        
+
         if (activeCategory !== 'all') {
-          // If a category maps to search term or actual category logic, here we treat it as search for simple filtering
-          // Since our mockup didn't provide category IDs in DB yet, filtering by name/description pseudo-category
-          params.search = activeCategory; 
+          params.search = activeCategory;
         } else if (rawSearch) {
           params.search = rawSearch;
         }
@@ -94,7 +91,7 @@ const Menu = () => {
               <ul className="category-list">
                 {categories.map(cat => (
                   <li key={cat.id}>
-                    <button 
+                    <button
                       className={`cat-btn ${activeCategory === cat.id ? 'active' : ''}`}
                       onClick={() => setActiveCategory(cat.id)}
                     >
@@ -125,9 +122,9 @@ const Menu = () => {
                 </label>
               </div>
             </div>
-            
+
             <div className="sidebar-banner" style={{ marginTop: '30px' }}>
-                <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&auto=format&fit=crop" alt="Banner quảng cáo" style={{ width: '100%', borderRadius: '8px' }}/>
+              <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&auto=format&fit=crop" alt="Banner quảng cáo" style={{ width: '100%', borderRadius: '8px' }} />
             </div>
           </aside>
 
@@ -151,48 +148,32 @@ const Menu = () => {
             </div>
 
             <div className="product-grid menu-product-grid">
-              {loading ? (
-                <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '40px'}}>Đang tải món ăn...</div>
-              ) : products.length === 0 ? (
-                <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '40px'}}>Không tìm thấy món ăn nào phù hợp</div>
-              ) : (
-                products.map((product) => (
-                  <motion.div
-                    key={product._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="product-card"
-                  >
-                    <div className="product-img-wrapper">
-                      <img src={product.image || 'https://images.unsplash.com/photo-1544025162-8315ea07f440?w=500'} alt={product.name} className="product-img" />
-                      <div className="product-actions-hover">
-                        <button className="icon-btn" title="Yêu thích"><Heart size={18} /></button>
-                        <button className="icon-btn" title="Thêm vào giỏ">
-                          <ShoppingCart size={18} />
-                        </button>
-                      </div>
+              {products.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="product-card"
+                >
+                  <div className="product-img-wrapper">
+                    <img src={getImageUrl(product.image)} alt={product.name} className="product-img" />
+                    <div className="product-actions-hover">
+                      <button className="icon-btn" title="Yêu thích"><Heart size={18} /></button>
+                      <button className="icon-btn" title="Thêm vào giỏ">
+                        <ShoppingCart size={18} />
+                      </button>
                     </div>
-                    
-                    <div className="product-info">
-                      <Link to={`/product/${product._id}`} style={{textDecoration: 'none'}}>
-                        <h3 className="product-name" style={{color: 'var(--text-main)', cursor: 'pointer', transition: 'color 0.2s'}} onMouseOver={e=>e.target.style.color='var(--primary)'} onMouseOut={e=>e.target.style.color='var(--text-main)'}>
-                          {product.name}
-                        </h3>
-                      </Link>
-                      {product.restaurantId?.name && (
-                        <div style={{fontSize: '12px', color: '#7f8c8d', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px'}}>
-                          <span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'inline-block'}}></span>
-                          {product.restaurantId.name}
-                        </div>
-                      )}
-                      <div className="product-price-wrap">
-                        <span className="product-price">{formatPrice(product.price)}</span>
-                      </div>
+                  </div>
+
+                  <div className="product-info">
+                    <h3 className="product-name">{product.name}</h3>
+                    <div className="product-price-wrap">
+                      <span className="product-price">{formatPrice(product.price)}</span>
                     </div>
-                  </motion.div>
-                ))
-              )}
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </main>
         </div>

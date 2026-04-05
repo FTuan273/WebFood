@@ -1,25 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Share2, Plus, Minus, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
-
 import axios from 'axios';
-
-// Function to format price
-const formatPrice = (price) => {
-  if (!price) return '';
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-};
+import { formatPrice, getImageUrl } from '../utils/helpers';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('desc');
-  
+
   // Review Form States
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
@@ -89,11 +83,11 @@ const ProductDetail = () => {
   };
 
   if (loading) {
-    return <div style={{textAlign: 'center', padding: '100px 0'}}>Đang tải dữ liệu...</div>;
+    return <div style={{ textAlign: 'center', padding: '100px 0' }}>Đang tải dữ liệu...</div>;
   }
 
   if (!product) {
-    return <div style={{textAlign: 'center', padding: '100px 0'}}>Sản phẩm không tồn tại.</div>;
+    return <div style={{ textAlign: 'center', padding: '100px 0' }}>Sản phẩm không tồn tại.</div>;
   }
 
   return (
@@ -101,8 +95,8 @@ const ProductDetail = () => {
       {/* Breadcrumb */}
       <div className="container" style={{ padding: '20px 15px' }}>
         <div className="breadcrumb">
-          <Link to="/">Trang chủ</Link> <span>/</span> 
-          <Link to="/menu">Thực đơn</Link> <span>/</span> 
+          <Link to="/">Trang chủ</Link> <span>/</span>
+          <Link to="/menu">Thực đơn</Link> <span>/</span>
           <strong>{product.name}</strong>
         </div>
       </div>
@@ -112,20 +106,27 @@ const ProductDetail = () => {
           {/* Images */}
           <div className="product-gallery">
             <div className="main-image">
-              <img src={product.image || 'https://images.unsplash.com/photo-1544025162-8315ea07f440?w=800'} alt={product.name} />
+              <img src={getImageUrl(product.image)} alt={product.name} />
+            </div>
+            <div className="thumbnail-list">
+              {product.gallery?.map((img, idx) => (
+                <div key={idx} className="thumbnail active">
+                  <img src={getImageUrl(img)} alt="thumbnail" />
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Info */}
           <div className="product-info-wrap">
             <h1 className="detail-title">{product.name}</h1>
-            
+
             <div className="product-meta">
-              <span>Quán: <strong style={{color: 'var(--primary)'}}>{product.restaurantId?.name || 'Đang cập nhật'}</strong></span>
+              <span>Quán: <strong style={{ color: 'var(--primary)' }}>{product.restaurantId?.name || 'Đang cập nhật'}</strong></span>
               <span className="divider">|</span>
               <span>Đánh giá: <strong>{product.avgRating ? `${product.avgRating} ⭐ (${product.totalReviews} lượt)` : 'Chưa có'}</strong></span>
               <span className="divider">|</span>
-              <span>Tình trạng: <strong style={{color: product.status === 'available' ? '#28a745' : '#dc3545'}}>{product.status === 'available' ? 'Còn món' : 'Hết món'}</strong></span>
+              <span>Tình trạng: <strong style={{ color: product.status === 'available' ? '#28a745' : '#dc3545' }}>{product.status === 'available' ? 'Còn món' : 'Hết món'}</strong></span>
             </div>
 
             <div className="detail-price-box">
@@ -139,13 +140,13 @@ const ProductDetail = () => {
 
             <div className="purchase-actions">
               <div className="quantity-selector">
-                <button onClick={() => handleQuantityChange('decrease')}><Minus size={16}/></button>
+                <button onClick={() => handleQuantityChange('decrease')}><Minus size={16} /></button>
                 <input type="number" value={quantity} readOnly />
-                <button onClick={() => handleQuantityChange('increase')}><Plus size={16}/></button>
+                <button onClick={() => handleQuantityChange('increase')}><Plus size={16} /></button>
               </div>
-              
-              <button 
-                className="btn btn-primary btn-add-cart" 
+
+              <button
+                className="btn btn-primary btn-add-cart"
                 onClick={handleAddToCart}
               >
                 THÊM VÀO GIỎ HÀNG
@@ -157,16 +158,16 @@ const ProductDetail = () => {
             </button>
 
             <div className="extra-actions">
-              <button className="text-btn"><Heart size={18}/> Thêm vào yêu thích</button>
-              <button className="text-btn"><Share2 size={18}/> Chia sẻ</button>
+              <button className="text-btn"><Heart size={18} /> Thêm vào yêu thích</button>
+              <button className="text-btn"><Share2 size={18} /> Chia sẻ</button>
             </div>
-            
+
             <div className="trust-badges">
               <div className="badge-item">
-                <CheckCircle size={20} color="var(--primary)"/> <span>Giao hàng cực nhanh</span>
+                <CheckCircle size={20} color="var(--primary)" /> <span>Giao hàng cực nhanh</span>
               </div>
               <div className="badge-item">
-                <CheckCircle size={20} color="var(--primary)"/> <span>Đảm bảo chất lượng 100%</span>
+                <CheckCircle size={20} color="var(--primary)" /> <span>Đảm bảo chất lượng 100%</span>
               </div>
             </div>
           </div>
@@ -175,13 +176,13 @@ const ProductDetail = () => {
         {/* Product Tabs */}
         <div className="product-tabs-section">
           <div className="tabs-header">
-            <button 
+            <button
               className={`tab-btn ${activeTab === 'desc' ? 'active' : ''}`}
               onClick={() => setActiveTab('desc')}
             >
               Mô tả món
             </button>
-            <button 
+            <button
               className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
               onClick={() => setActiveTab('reviews')}
             >
@@ -192,7 +193,7 @@ const ProductDetail = () => {
             {activeTab === 'desc' && (
               <div className="content-pane">
                 <p>{product.description || 'Chưa có mô tả cho món ăn này.'}</p>
-                <img src={product.image || 'https://images.unsplash.com/photo-1544025162-8315ea07f440?w=800'} alt="Chi tiết" style={{width: '100%', maxWidth: '600px', display: 'block', margin: '20px auto', borderRadius: '8px'}} />
+                <img src={getImageUrl(product.image)} alt={product.name} style={{ width: '100%', maxWidth: '600px', display: 'block', margin: '20px auto', borderRadius: '8px' }} />
               </div>
             )}
             {activeTab === 'reviews' && (
@@ -203,8 +204,8 @@ const ProductDetail = () => {
                   <form onSubmit={handleSubmitReview}>
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Chấm điểm:</label>
-                      <select 
-                        value={rating} 
+                      <select
+                        value={rating}
                         onChange={(e) => setRating(Number(e.target.value))}
                         style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ced4da' }}
                       >
@@ -217,7 +218,7 @@ const ProductDetail = () => {
                     </div>
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Nhận xét:</label>
-                      <textarea 
+                      <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="Món ăn này như thế nào..."
@@ -225,9 +226,9 @@ const ProductDetail = () => {
                         required
                       />
                     </div>
-                    <button 
-                      type="submit" 
-                      className="btn btn-primary" 
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
                       disabled={reviewLoading}
                       style={{ padding: '10px 20px' }}
                     >

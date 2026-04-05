@@ -47,6 +47,13 @@ import Users from './pages/Users';
 import Restaurants from './pages/Restaurants';
 import Categories from './pages/Categories';
 
+import MerchantLayout from './components/MerchantLayout';
+import MerchantDashboard from './pages/MerchantDashboard';
+import MerchantProducts from './pages/MerchantProducts';
+import MerchantOrders   from './pages/MerchantOrders';
+import MerchantStore    from './pages/MerchantStore';
+import MerchantStats    from './pages/MerchantStats';
+
 import './index.css';
 
 function App() {
@@ -90,14 +97,17 @@ function App() {
                   <Route path="restaurants" element={<Restaurants />} />
                   <Route path="categories" element={<Categories />} />
                 </Route>
-                <Route path="/merchant/dashboard" element={
+                <Route path="/merchant" element={
                   <RoleRoute allowedRoles={['Merchant']}>
-                    <div className="dashboard-placeholder">
-                      <h1>Khu vực Chủ quán (Merchant)</h1>
-                      <p>Hệ thống quản lý đơn hàng và món ăn cho đối tác.</p>
-                    </div>
+                    <MerchantLayout />
                   </RoleRoute>
-                } />
+                }>
+                  <Route index element={<MerchantDashboard />} />
+                  <Route path="orders"   element={<MerchantOrders />} />
+                  <Route path="products" element={<MerchantProducts />} />
+                  <Route path="store"    element={<MerchantStore />} />
+                  <Route path="stats"    element={<MerchantStats />} />
+                </Route>
 
                 {/* ── Trang Hồ sơ cá nhân (Yêu cầu Đăng nhập) ───────────────────── */}
                 <Route 
