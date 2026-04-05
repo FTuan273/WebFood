@@ -26,6 +26,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve file ảnh đã upload tại /uploads/...
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // ─── Kết nối MongoDB ─────────────────────────────────────────────────────────
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/webappfood';
 
@@ -43,6 +47,7 @@ const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
 app.use('/api/payment', require('./routes/payment.routes'));
 app.use('/api/customer', require('./routes/customer.routes'));
+app.use('/api/merchant', require('./routes/merchant.routes'));
 
 app.get('/', (req, res) => {
   res.json({

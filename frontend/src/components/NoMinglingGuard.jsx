@@ -44,7 +44,7 @@ const NoMinglingGuard = ({ children }) => {
   // KIỂM TRA ĐIỀU KIỆN CHẶN:
   // Nếu là Admin hoặc Merchant -> Chuyển hướng ngay lập tức về khu vực quản lý
   if (user && (user.role === 'Admin' || user.role === 'Merchant')) {
-    const targetPath = user.role === 'Admin' ? '/admin/dashboard' : '/merchant/dashboard';
+    const targetPath = user.role === 'Admin' ? '/admin' : '/merchant';
     return <Navigate to={targetPath} replace />;
   }
 
