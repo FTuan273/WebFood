@@ -54,7 +54,7 @@ io.on('connection', (socket) => {
   // 3. Lắng nghe sự kiện khách đặt hàng thành công
   socket.on('place-order', (orderData) => {
     const { merchantId, customerName, totalAmount, orderId } = orderData;
-    
+
     // 4. Gửi thông báo đến đúng chủ quán
     io.to(merchantId).emit('new-order-received', {
       message: `🔔 Có đơn hàng mới từ ${customerName || 'khách hàng'}: ${totalAmount?.toLocaleString()}đ`,
@@ -75,6 +75,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve file ảnh đã upload tại /uploads/...
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // ─── Kết nối MongoDB ─────────────────────────────────────────────────────────
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/webappfood';
 
@@ -86,14 +90,13 @@ mongoose
 // ─── Mount Routes ─────────────────────────────────────────────────────────────
 // Phải đặt TRƯỚC khi mount các Route
 app.use((req, res, next) => {
-  req.io = io; 
+  req.io = io;
   next();
 });
 app.use('/api/auth', require('./routes/auth.routes'));
 
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
-
 app.get('/', (req, res) => {
   res.json({
     message: 'WebFood API đang hoạt động',
@@ -101,8 +104,27 @@ app.get('/', (req, res) => {
   });
 });
 
-const orderRoutes = require('./routes/orderRoutes'); 
+const orderRoutes = require('./routes/orderRoutes');
 app.use('/api/orders', orderRoutes);
+
+const customerRoutes = require('./routes/customer.routes');
+app.use('/api/customer', customerRoutes);
+
+const merchantRoutes = require('./routes/merchant.routes');
+app.use('/api/merchant', merchantRoutes);
+
+const paymentRoutes = require('./routes/payment.routes');
+app.use('/api/payment', paymentRoutes);
+
+
+// ─── Global Error Handler ───────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('❌ Lỗi hệ thống:', err);
+  if (err.name === 'MulterError' && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ success: false, message: 'File quá lớn (Tối đa 5MB)' });
+  }
+  res.status(500).json({ success: false, message: err.message || 'Lỗi hệ thống nội bộ' });
+});
 
 // ─── Khởi động Server (Sử dụng server.listen thay vì app.listen) ──────────────
 server.listen(PORT, () => {

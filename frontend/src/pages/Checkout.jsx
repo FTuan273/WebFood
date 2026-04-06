@@ -3,12 +3,31 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { ChevronRight, CreditCard } from 'lucide-react';
+import { ChevronRight, CreditCard, Smartphone } from 'lucide-react';
 import { io } from 'socket.io-client';
-import axios from 'axios'; // Import thêm axios để gọi API
+import axiosInstance from '../utils/axiosInstance';
+import PaymentDetails from '../components/PaymentDetails';
+
+const SHIP_FEE = 40000;
 
 const Checkout = () => {
   const socketRef = useRef(null);
+  const { user } = useAuth();
+  const { cartItems, cartTotal, clearCart } = useCart();
+  const navigate = useNavigate();
+
+  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [useMomo, setUseMomo] = useState(false);
+  
+  // Thông tin giao hàng
+  const [fullName, setFullName] = useState(user ? `${user.lastName || ''} ${user.firstName || ''}`.trim() : '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState(user?.phoneNumber || '');
+  const [address, setAddress] = useState('');
+  const [province, setProvince] = useState('');
+  const [district, setDistrict] = useState('');
+  const [ward, setWard] = useState('');
+  const [note, setNote] = useState('');
 
   useEffect(() => {
     const socket = io('http://localhost:5000', { transports: ['websocket'] });
@@ -29,70 +48,74 @@ const Checkout = () => {
       }
     };
   }, []);
-  const { user } = useAuth();
-  const { cartItems, cartTotal, clearCart } = useCart(); // Thêm clearCart để xóa giỏ sau khi đặt
-  const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState('cod');
 
-  const [fullName, setFullName] = useState(user ? `${user.lastName} ${user.firstName}` : '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [phone, setPhone] = useState(user?.phoneNumber || '');
-  const [address, setAddress] = useState('');
-  const [province, setProvince] = useState('');
-  const [district, setDistrict] = useState('');
-  const [ward, setWard] = useState('');
-  const [note, setNote] = useState('');
-
-  const shippingFee = 40000;
+  useEffect(() => {
+    if (paymentMethod !== 'bank') setUseMomo(false);
+  }, [paymentMethod]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  const calculateTotal = () => {
-    return cartTotal;
-  };
+  const grandTotal = cartTotal + SHIP_FEE;
 
-  // --- Hàm xử lý đặt hàng ĐÃ CẬP NHẬT GỌI API ---
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
 
+    if (!user) {
+      toast.error('Vui lòng đăng nhập trước khi đặt hàng.');
+      navigate('/login');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      toast.error('Giỏ hàng của bạn đang trống.');
+      return;
+    }
+
     try {
-      if (!user) {
-        toast.error('Vui lòng đăng nhập trước khi đặt hàng.');
-        navigate('/login');
-        return;
-      }
-
-      const originalRestaurantId = cartItems.length > 0 ? (cartItems[0].restaurantId || cartItems[0].restaurant?._id || cartItems[0].restaurant?.id) : null;
+      // 1. Xác định merchantId (restaurantId)
+      const originalRestaurantId = cartItems[0].restaurantId || cartItems[0].restaurant?._id || cartItems[0].restaurant?.id;
       const merchantId = originalRestaurantId || localStorage.getItem('merchantId') || 'MERCHANT_123';
-      // Đồng bộ merchantId giữa Checkout và MerchantDashboard để realtime + fetch đơn.
-      localStorage.setItem('merchantId', merchantId);
-
+      
       if (!merchantId) {
         toast.error('Không xác định được quán hàng. Vui lòng kiểm tra giỏ hàng.');
         return;
       }
 
-      const customerId = user?._id || user?.id;
-      if (!customerId) {
-        toast.error('Không xác định được thông tin người dùng. Vui lòng đăng nhập lại.');
-        navigate('/login');
+      const deliveryAddress = `${address}, ${ward}, ${district}, ${province}`;
+      
+      // 2. Xử lý theo phương thức thanh toán
+      if (paymentMethod === 'momo_gateway') {
+        if (grandTotal < 1000) {
+          toast.error('Số tiền thanh toán không hợp lệ');
+          return;
+        }
+
+        const { data } = await axiosInstance.post('/payment/momo/create', {
+          amount: grandTotal,
+          orderInfo: `Thanh toan WebFood ${Date.now()}`,
+          // Note: Here we might need to pass order details if needed by backend
+        });
+
+        if (data.payUrl) {
+          window.location.href = data.payUrl;
+          return;
+        }
+        toast.error('MoMo không trả về link thanh toán');
         return;
       }
 
-      const deliveryAddress = `${address}, ${ward}, ${district}, ${province}`;
-
-      // 1. Chuẩn bị dữ liệu để lưu vào MongoDB
+      // 3. Thanh toán COD hoặc Bank (Tạo đơn hàng trực tiếp)
       const orderData = {
-        customerId,
-        restaurantId: merchantId, // Lưu chính merchantId tương ứng để MerchantDashboard lấy đúng đơn
+        customerId: user._id || user.id,
+        restaurantId: merchantId,
         items: cartItems.map(item => ({
-          productId: item._id || item.id || String(item.name),
+          productId: item._id || item.id,
           quantity: item.quantity,
           price: item.price
         })),
-        totalPrice: calculateTotal() + shippingFee,
+        totalPrice: grandTotal,
         deliveryAddress,
         paymentMethod: paymentMethod === 'cod' ? 'CASH' : 'BANK',
         status: 'pending',
@@ -102,34 +125,29 @@ const Checkout = () => {
         customerPhone: phone
       };
 
-      // 2. GỌI API POST ĐỂ LƯU VÀO DATABASE
-      const response = await axios.post('http://localhost:5000/api/orders', orderData);
+      const response = await axiosInstance.post('/orders', orderData);
 
       if (response.status === 201 || response.status === 200) {
-        // 3. LƯU THÀNH CÔNG -> BẮN SOCKET CHO CHỦ QUÁN (BẢO)
+        // 4. Bắn socket cho Merchant
         if (socketRef.current && socketRef.current.connected) {
           socketRef.current.emit('place-order', {
             merchantId,
-            customerName: user ? `${user.lastName} ${user.firstName}` : 'Khách hàng',
-            totalAmount: calculateTotal() + shippingFee,
+            customerName: fullName || 'Khách hàng',
+            totalAmount: grandTotal,
             orderId: response.data._id
           });
-        } else {
-          console.warn('Checkout: socket not connected, skip emit place-order');
         }
 
         toast.success('Đặt hàng thành công!');
-        if(clearCart) clearCart();
+        clearCart();
         navigate('/');
       }
     } catch (error) {
       console.error("Lỗi khi đặt hàng:", error);
-      const serverMessage = error.response?.data?.message || error.response?.data || error.message;
+      const serverMessage = error.response?.data?.message || error.message;
       toast.error(`Lỗi khi đặt hàng: ${serverMessage}`);
     }
   };
-
-  // ... (Phần return JSX phía dưới giữ nguyên như code bạn gửi)
 
   if (cartItems.length === 0) {
     return (
@@ -151,7 +169,7 @@ const Checkout = () => {
         <form onSubmit={handleCheckoutSubmit}>
           <div className="checkout-grid">
             
-            {/* Cột 1: Thông tin giao hàng (Giữ nguyên) */}
+            {/* Cột 1: Thông tin giao hàng */}
             <div className="checkout-col checkout-info">
               <h3 className="checkout-title">Thông tin giao hàng</h3>
               {user ? (
@@ -159,7 +177,7 @@ const Checkout = () => {
                   <div className="user-avatar">{user.firstName?.charAt(0) || 'U'}</div>
                   <div className="user-details">
                     <div>{user.lastName} {user.firstName} ({user.email})</div>
-                    <Link to="/profile" className="logout-link" style={{ fontSize: '13px' }}>Đăng xuất</Link>
+                    <Link to="/profile" className="logout-link" style={{ fontSize: '13px' }}>Thay đổi</Link>
                   </div>
                 </div>
               ) : (
@@ -202,7 +220,7 @@ const Checkout = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Địa chỉ"
+                  placeholder="Địa chỉ cụ thể"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   required
@@ -229,6 +247,8 @@ const Checkout = () => {
                   <option value="">Chọn Quận / Huyện</option>
                   <option value="Quận 1">Quận 1</option>
                   <option value="Quận 3">Quận 3</option>
+                  <option value="Quận 7">Quận 7</option>
+                  <option value="Quận Tân Bình">Quận Tân Bình</option>
                 </select>
                 <select
                   className="form-control"
@@ -239,6 +259,7 @@ const Checkout = () => {
                   <option value="">Chọn Phường / Xã</option>
                   <option value="Phường Bến Nghé">Phường Bến Nghé</option>
                   <option value="Phường Đa Kao">Phường Đa Kao</option>
+                  <option value="Phường 1">Phường 1</option>
                 </select>
               </div>
               <div className="form-group">
@@ -252,7 +273,7 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* Cột 2: Phương thức thanh toán (Giữ nguyên logic state) */}
+            {/* Cột 2: Phương thức thanh toán */}
             <div className="checkout-col checkout-payment">
               <h3 className="checkout-title">Phương thức vận chuyển</h3>
               <div className="radio-group">
@@ -261,7 +282,7 @@ const Checkout = () => {
                     <input type="radio" name="shipping" defaultChecked />
                     <span>Giao hàng tận nơi</span>
                   </div>
-                  <span>{formatPrice(shippingFee)}</span>
+                  <span>{formatPrice(SHIP_FEE)}</span>
                 </label>
               </div>
 
@@ -292,16 +313,57 @@ const Checkout = () => {
                     <span>Chuyển khoản qua ngân hàng</span>
                   </div>
                 </label>
+
+                <label className={`radio-label ${paymentMethod === 'momo_gateway' ? 'active' : ''}`}>
+                  <div className="radio-left">
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === 'momo_gateway'}
+                      onChange={() => setPaymentMethod('momo_gateway')}
+                    />
+                    <div className="payment-icon"><Smartphone size={20} /></div>
+                    <span>Ví MoMo (Cổng thanh toán)</span>
+                  </div>
+                </label>
               </div>
+
+              {paymentMethod === 'bank' && (
+                <PaymentDetails
+                  variant="bank"
+                  grandTotal={grandTotal}
+                  useMomo={useMomo}
+                  onMomoToggle={setUseMomo}
+                />
+              )}
+
+              {paymentMethod === 'momo_gateway' && (
+                <div
+                  className="payment-gateway-hint"
+                  style={{
+                    marginTop: 16,
+                    padding: '14px 16px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'rgba(209, 160, 84, 0.06)',
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <strong style={{ display: 'block', marginBottom: 8 }}>Thanh toán qua MoMo</strong>
+                  Sau khi bấm <strong>ĐẶT HÀNG</strong>, bạn sẽ được chuyển tới trang thanh toán MoMo an toàn.
+                  Khi hoàn tất, hệ thống sẽ đưa bạn về trang kết quả.
+                </div>
+              )}
             </div>
 
-            {/* Cột 3: Tóm tắt đơn hàng (Giữ nguyên mapping dữ liệu) */}
+            {/* Cột 3: Tóm tắt đơn hàng */}
             <div className="checkout-col checkout-summary">
               <h3 className="checkout-title">Đơn hàng ({cartItems.length} sản phẩm)</h3>
               
               <div className="summary-items">
                 {cartItems.map(item => (
-                  <div key={item.id} className="summary-item">
+                  <div key={item.id || item._id} className="summary-item">
                     <div className="summary-item-img">
                       <img src={item.image} alt={item.name} />
                       <span className="summary-item-qty">{item.quantity}</span>
@@ -323,11 +385,11 @@ const Checkout = () => {
                 </div>
                 <div className="summary-row">
                   <span>Phí vận chuyển</span>
-                  <span>{formatPrice(shippingFee)}</span>
+                  <span>{formatPrice(SHIP_FEE)}</span>
                 </div>
                 <div className="summary-row total-row">
                   <span>Tổng cộng</span>
-                  <span className="final-price">{formatPrice(calculateTotal() + shippingFee)}</span>
+                  <span className="final-price">{formatPrice(grandTotal)}</span>
                 </div>
               </div>
               
