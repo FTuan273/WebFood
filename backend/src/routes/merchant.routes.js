@@ -24,5 +24,6 @@ router.delete('/products/:id',     ctrl.deleteProduct);
 router.get('/orders',              ctrl.getOrders);
 router.put('/orders/:id/status',   ctrl.updateOrderStatus);
 router.get('/stats',               ctrl.getStats);
+router.get('/reviews',             ctrl.getReviews);
 
 module.exports = router;

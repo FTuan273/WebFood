@@ -31,4 +31,4 @@ Thư mục `frontend/` chứa mã nguồn giao diện người dùng:
 - Luôn kiểm tra lỗi (ESLint) trước khi commit.
 
 ---
-*Chúc các bạn làm bài tốt!*
+

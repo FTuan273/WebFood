@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Lock, Unlock, Search } from 'lucide-react';
+import { Lock, Unlock, Search, Trash2 } from 'lucide-react';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -23,6 +23,20 @@ const Users = () => {
     axios.put(`http://localhost:5000/api/admin/users/${id}/status`)
       .then(() => fetchUsers())
       .catch(console.error);
+  };
+
+  const updateRole = (id, newRole) => {
+    axios.put(`http://localhost:5000/api/admin/users/${id}/role`, { role: newRole })
+      .then(() => fetchUsers())
+      .catch(console.error);
+  };
+
+  const deleteUser = (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa User này vĩnh viễn khỏi hệ thống không?')) {
+      axios.delete(`http://localhost:5000/api/admin/users/${id}`)
+        .then(() => fetchUsers())
+        .catch(console.error);
+    }
   };
 
   return (
@@ -48,22 +62,41 @@ const Users = () => {
               users.map(user => (
                 <tr key={user._id} style={{ borderBottom: '1px solid #f1f2f6' }}>
                   <td style={tdStyle}>
-                    <div style={{ fontWeight: 'bold', color: '#2f3542' }}>{user.name}</div>
+                    <div style={{ fontWeight: 'bold', color: '#2f3542' }}>{user.firstName} {user.lastName}</div>
                     <div style={{ fontSize: '0.85rem', color: '#7f8c8d' }}>{user.email}</div>
                   </td>
                   <td style={tdStyle}>
-                    <span style={roleBadge(user.role)}>{user.role.toUpperCase()}</span>
-                  </td>
-                  <td style={tdStyle}>
-                    <span style={statusBadge(user.status)}>{user.status === 'active' ? 'Hoạt động' : 'Bị Khóa'}</span>
-                  </td>
-                  <td style={tdStyle}>
-                    <button 
-                      onClick={() => toggleStatus(user._id)}
-                      style={actionButton(user.status)}
+                    <select 
+                      value={user.role} 
+                      onChange={(e) => updateRole(user._id, e.target.value)}
+                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #ced6e0', outline: 'none', backgroundColor: '#f8f9fa', color: '#2f3542', fontWeight: 600, cursor: 'pointer' }}
                     >
-                      {user.status === 'active' ? <><Lock size={16} /> Khóa</> : <><Unlock size={16} /> Mở khóa</>}
-                    </button>
+                      <option value="Customer">CUSTOMER</option>
+                      <option value="Merchant">MERCHANT</option>
+                      <option value="Admin">ADMIN</option>
+                    </select>
+                  </td>
+                  <td style={tdStyle}>
+                    <span style={statusBadge(user.status || 'active')}>{user.status === 'locked' ? 'Bị Khóa' : 'Hoạt động'}</span>
+                  </td>
+                  <td style={tdStyle}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button 
+                        onClick={() => toggleStatus(user._id)}
+                        style={actionButton(user.status || 'active')}
+                      >
+                        {user.status === 'locked' ? <><Unlock size={16} /> Mở khóa</> : <><Lock size={16} /> Khóa</>}
+                      </button>
+                      <button 
+                        onClick={() => deleteUser(user._id)} 
+                        style={{ padding: '8px', backgroundColor: '#fff', border: '1px solid #ff4757', color: '#ff4757', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                        onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#ff4757'; e.currentTarget.style.color = '#fff'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#ff4757'; }}
+                        title="Xóa tài khoản"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

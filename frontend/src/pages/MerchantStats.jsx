@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingBag, TrendingUp, UtensilsCrossed, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ShoppingBag, TrendingUp, UtensilsCrossed, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
 import axiosInstance from '../utils/axiosInstance';
 
 const MerchantStats = () => {
@@ -26,7 +26,8 @@ const MerchantStats = () => {
 
       {/* Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <Card label="Doanh thu"          value={stats.totalRevenue.toLocaleString('vi-VN') + '₫'} icon={<TrendingUp size={24}/>}    color="linear-gradient(135deg,#e94560,#c0392b)" />
+        <Card label="Doanh thu thô"      value={stats.totalRevenue.toLocaleString('vi-VN') + '₫'} icon={<TrendingUp size={24}/>}    color="linear-gradient(135deg,#e94560,#c0392b)" />
+        <Card label={`Thực lãnh (-${stats.commissionRate}%)`} value={(stats.netRevenue || 0).toLocaleString('vi-VN') + '₫'} icon={<DollarSign size={24}/>} color="linear-gradient(135deg,#2ed573,#1abc9c)" />
         <Card label="Tổng đơn"           value={stats.totalOrders}   icon={<ShoppingBag size={24}/>}   color="linear-gradient(135deg,#0f3460,#533483)" />
         <Card label="Đã hoàn thành"      value={stats.completed}     icon={<CheckCircle size={24}/>}   color="linear-gradient(135deg,#16a085,#1abc9c)" />
         <Card label="Chờ xác nhận"       value={stats.pending}       icon={<Clock size={24}/>}         color="linear-gradient(135deg,#f39c12,#e67e22)" />

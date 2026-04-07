@@ -1,29 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Heart, Search, Filter } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { getImageUrl } from '../utils/imageUrl';
-
-const categories = [
-  { id: 'all', name: 'Tất cả món ăn' },
-  { id: 'khai-vi', name: 'Khai vị' },
-  { id: 'mon-chinh', name: 'Món chính' },
-  { id: 'canh-sup', name: 'Canh & Súp' },
-  { id: 'trang-mieng', name: 'Tráng miệng' },
-  { id: 'do-uong', name: 'Đồ uống' },
-];
+import { useFavorites } from '../context/FavoriteContext';
 
 const Menu = () => {
   const [searchParams] = useSearchParams();
   const rawSearch = searchParams.get('search') || '';
 
-  const [activeCategory, setActiveCategory] = useState(rawSearch ? rawSearch : 'all');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [sortBy, setSortBy] = useState('default');
   const [priceRange, setPriceRange] = useState(''); // 'under-100', '100-300', '300-500', 'over-500'
 
+  const [categories, setCategories] = useState([{ id: 'all', name: 'Tất cả món ăn' }]);
   const [products, setProducts] = useState([]);
+  const { favoriteProductIds, toggleFavoriteProduct } = useFavorites();
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/admin/categories');
+        if (res.data && res.data.success) {
+          const activeCats = res.data.categories.filter(c => c.isActive).map(c => ({ id: c._id, name: c.name }));
+          setCategories([{ id: 'all', name: 'Tất cả món ăn' }, ...activeCats]);
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -32,7 +41,7 @@ const Menu = () => {
         let params = {};
 
         if (activeCategory !== 'all') {
-          params.search = activeCategory;
+          params.categoryId = activeCategory;
         } else if (rawSearch) {
           params.search = rawSearch;
         }
@@ -51,6 +60,11 @@ const Menu = () => {
           params.maxPrice = 500000;
         } else if (priceRange === 'over-500') {
           params.minPrice = 500000;
+        }
+
+        const locId = localStorage.getItem('userLocationId');
+        if (locId) {
+          params.locationId = locId;
         }
 
         const res = await axios.get('http://localhost:5000/api/customer/products', { params });
@@ -75,7 +89,7 @@ const Menu = () => {
       {/* Page Banner */}
       <div className="page-banner">
         <div className="container">
-          <h1 className="page-title">Thực đơn nhà hàng</h1>
+          <h1 className="page-title">Thực đơn của các nhà hàng</h1>
           <div className="breadcrumb">
             <Link to="/">Trang chủ</Link> <span>/</span> <strong>Thực đơn</strong>
           </div>
@@ -148,9 +162,9 @@ const Menu = () => {
             </div>
 
             <div className="product-grid menu-product-grid">
-              {products.map((product, index) => (
+              {products.map((product) => (
                 <motion.div
-                  key={product.id}
+                  key={product._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
@@ -159,15 +173,32 @@ const Menu = () => {
                   <div className="product-img-wrapper">
                     <img src={getImageUrl(product.image)} alt={product.name} className="product-img" />
                     <div className="product-actions-hover">
-                      <button className="icon-btn" title="Yêu thích"><Heart size={18} /></button>
-                      <button className="icon-btn" title="Thêm vào giỏ">
-                        <ShoppingCart size={18} />
+                      <button 
+                        className="icon-btn" 
+                        title="Yêu thích" 
+                        onClick={(e) => toggleFavoriteProduct(product._id, e)}
+                        style={{ border: 'none', cursor: 'pointer' }}
+                      >
+                        <Heart size={18} fill={favoriteProductIds.has(product._id) ? '#EE4D2D' : 'none'} color={favoriteProductIds.has(product._id) ? '#EE4D2D' : 'currentColor'} />
                       </button>
+                      <Link to={`/product/${product._id}`} className="icon-btn" title="Thêm vào giỏ" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'inherit' }}>
+                        <ShoppingCart size={18} />
+                      </Link>
                     </div>
                   </div>
 
                   <div className="product-info">
-                    <h3 className="product-name">{product.name}</h3>
+                    <Link to={`/product/${product._id}`} style={{ textDecoration: 'none' }}>
+                      <h3 className="product-name" style={{ color: 'var(--text-main)', cursor: 'pointer', transition: 'color 0.2s', margin: '4px 0' }} onMouseOver={e => e.target.style.color = 'var(--primary)'} onMouseOut={e => e.target.style.color = 'var(--text-main)'}>
+                        {product.name}
+                      </h3>
+                    </Link>
+                    {product.restaurantId?.name && (
+                      <div style={{ fontSize: '12px', color: '#7f8c8d', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <span style={{ minWidth: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'inline-block' }}></span>
+                        {product.restaurantId.name} {product.restaurantId.locationId?.name ? `, ${product.restaurantId.locationId.name}` : ''}
+                      </div>
+                    )}
                     <div className="product-price-wrap">
                       <span className="product-price">{formatPrice(product.price)}</span>
                     </div>

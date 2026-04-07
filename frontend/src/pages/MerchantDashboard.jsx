@@ -34,17 +34,19 @@ const MerchantDashboard = () => {
         <div style={{ background: 'white', borderRadius: '14px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <h3 style={{ marginBottom: '16px', color: '#1a1a2e', fontWeight: 600 }}>📋 Thông tin quán</h3>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            {[
-              ['Tên quán', restaurant.name],
-              ['Địa chỉ', restaurant.address],
-              ['Giờ mở cửa', restaurant.openingHours],
-              ['Mô tả', restaurant.description || '(Chưa có)'],
-            ].map(([label, value]) => (
-              <tr key={label} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                <td style={{ padding: '12px 8px', color: '#888', width: '140px', fontSize: '0.9rem' }}>{label}</td>
-                <td style={{ padding: '12px 8px', color: '#333', fontWeight: 500 }}>{value}</td>
-              </tr>
-            ))}
+            <tbody>
+              {[
+                ['Tên quán', restaurant.name],
+                ['Địa chỉ', restaurant.address],
+                ['Giờ mở cửa', restaurant.openingHours],
+                ['Mô tả', restaurant.description || '(Chưa có)'],
+              ].map(([label, value]) => (
+                <tr key={label} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <td style={{ padding: '12px 8px', color: '#888', width: '140px', fontSize: '0.9rem' }}>{label}</td>
+                  <td style={{ padding: '12px 8px', color: '#333', fontWeight: 500 }}>{value}</td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       )}
