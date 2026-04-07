@@ -74,6 +74,7 @@ io.on('connection', (socket) => {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('public/uploads'));
 
 // Serve file ảnh đã upload tại /uploads/...
 const path = require('path');
@@ -97,6 +98,7 @@ app.use('/api/auth', require('./routes/auth.routes'));
 
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
+
 app.get('/', (req, res) => {
   res.json({
     message: 'WebFood API đang hoạt động',
@@ -140,4 +142,3 @@ server.on('error', (err) => {
     process.exit(1);
   }
 });
-
