@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const restaurantSchema = new mongoose.Schema({
   ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
+  locationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Location' },
   address: { type: String, required: true },
   description: { type: String, default: '' },
   image: { type: String, default: '' },

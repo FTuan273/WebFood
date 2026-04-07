@@ -1,64 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Star, Clock, MapPin, Search, Plus, ThumbsUp } from 'lucide-react';
+import { Star, Clock, MapPin, Search, Plus, ThumbsUp, Heart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { toast } from 'react-toastify';
-
-// Mock data
-const mockRestaurant = {
-  id: 1,
-  name: 'Cơm Tấm Phúc Lộc Thọ - Kha Vạn Cân',
-  banner: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2000&auto=format&fit=crop',
-  logo: 'https://images.unsplash.com/photo-1543826173-70651703c5a4?q=80&w=200&auto=format&fit=crop',
-  rating: 4.8,
-  reviews: '5k+',
-  distance: '1.2 km',
-  time: '15 phút',
-  minOrder: '20,000đ',
-  tags: ['Freeship', 'Giảm 30K'],
-  categories: [
-    { id: 'banchay', name: 'Món Bán Chạy' },
-    { id: 'com', name: 'Cơm Tấm' },
-    { id: 'them', name: 'Món Thêm' },
-    { id: 'nuoc', name: 'Đồ Uống' }
-  ],
-  menu: {
-    'banchay': [
-      { id: 101, name: 'Cơm Sườn Bì Chả', desc: 'Cơm sườn nướng than hoa, bì heo thái chỉ, chả trứng béo ngậy.', price: 55000, oldPrice: 65000, image: 'https://images.unsplash.com/photo-1623341214825-9f4f963727da?q=80&w=200', sold: '1k+' },
-      { id: 102, name: 'Cơm Sườn Nướng', desc: 'Sườn nướng tảng khổng lồ, ướp vị đậm đà.', price: 45000, image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=200', sold: '500+' }
-    ],
-    'com': [
-      { id: 103, name: 'Cơm Gà Xối Mỡ', desc: 'Đùi gà xối mỡ giòn rụm.', price: 50000, image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=200', sold: '200+' }
-    ],
-    'nuoc': [
-      { id: 104, name: 'Trà Đá', desc: '', price: 5000, image: null, sold: '2k+' },
-      { id: 105, name: 'Pepsi', desc: '', price: 15000, image: null, sold: '500+' }
-    ]
-  }
-};
+import axios from 'axios';
+import { getImageUrl } from '../utils/imageUrl';
+import { useFavorites } from '../context/FavoriteContext';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState('banchay');
+  const [activeTab, setActiveTab] = useState('');
   const [search, setSearch] = useState('');
   const { addToCart, cart, clearCart } = useCart();
+  const { favoriteRestaurantIds, toggleFavoriteRestaurant, favoriteProductIds, toggleFavoriteProduct } = useFavorites();
+  
+  const [restaurant, setRestaurant] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRestaurantDetail = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/customer/restaurants/${id}`);
+        if (res.data.success) {
+          setRestaurant(res.data.data);
+          if (res.data.data.categories && res.data.data.categories.length > 0) {
+            setActiveTab(res.data.data.categories[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching restaurant detail:', error);
+        toast.error('Không thể tải thông tin nhà hàng');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRestaurantDetail();
+  }, [id]);
 
   // Handle cross-restaurant cart conflict
   const handleAddToCart = (item) => {
-    // In a real app we'd check if the cart already has items from another restaurant
-    const hasOtherRes = cart.items.length > 0 && cart.items[0].restaurantId && cart.items[0].restaurantId !== mockRestaurant.id;
+    const hasOtherRes = cart.items.length > 0 && cart.items[0].restaurantId && cart.items[0].restaurantId !== restaurant.id;
     
     if (hasOtherRes) {
       if(window.confirm('Giỏ hàng đang có món của quán khác. Bạn có muốn xóa để đặt quán này?')) {
         clearCart();
-        addToCart({...item, restaurantId: mockRestaurant.id, restaurantName: mockRestaurant.name}, 1);
+        addToCart({...item, restaurantId: restaurant.id, restaurantName: restaurant.name}, 1);
         toast.success(`Đã thêm ${item.name}`);
       }
     } else {
-      addToCart({...item, restaurantId: mockRestaurant.id, restaurantName: mockRestaurant.name}, 1);
+      addToCart({...item, restaurantId: restaurant.id, restaurantName: restaurant.name}, 1);
       toast.success(`Đã thêm ${item.name}`);
     }
   };
+
+  if (loading) return <div style={{padding: '50px', textAlign: 'center'}}>Đang tải nhà hàng...</div>;
+  if (!restaurant) return <div style={{padding: '50px', textAlign: 'center'}}>Không tìm thấy nhà hàng!</div>;
 
   return (
     <div className="storefront-page" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh', paddingBottom: '60px' }}>
@@ -69,30 +65,37 @@ const RestaurantDetail = () => {
         {/* Banner & Thông tin quán */}
         <div className="store-header-card" style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px', boxShadow: 'var(--shadow-sm)' }}>
           <div className="store-banner" style={{ height: '220px', position: 'relative' }}>
-            <img src={mockRestaurant.banner} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={restaurant.banner} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div className="store-info" style={{ padding: '20px', position: 'relative', display: 'flex', gap: '20px' }}>
-            <img src={mockRestaurant.logo} alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '8px', marginTop: '-40px', border: '3px solid white', backgroundColor: 'white', objectFit: 'cover', boxShadow: 'var(--shadow-sm)' }} />
+            <img src={getImageUrl(restaurant.logo)} alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '8px', marginTop: '-40px', border: '3px solid white', backgroundColor: 'white', objectFit: 'cover', boxShadow: 'var(--shadow-sm)' }} />
             <div style={{ flexGrow: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
                 <span style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold', borderRadius: '3px', textTransform: 'uppercase' }}>Đối Tác</span>
-                <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>{mockRestaurant.name}</h1>
+                <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>{restaurant.name}</h1>
+                <button 
+                  onClick={(e) => toggleFavoriteRestaurant(restaurant.id, e)} 
+                  style={{ background: 'none', border: '1px solid #eee', borderRadius: '50%', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 'auto' }}
+                  title="Yêu thích quán này"
+                >
+                  <Heart size={20} fill={favoriteRestaurantIds.has(restaurant.id) ? '#EE4D2D' : 'none'} color={favoriteRestaurantIds.has(restaurant.id) ? '#EE4D2D' : '#888'} />
+                </button>
               </div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '15px' }}>Cơm Tấm, Món Việt</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '15px' }}>Đồ Ăn, Nước Uống</p>
               
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', fontSize: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <Star size={16} fill="#ffc107" color="#ffc107" />
-                  <span style={{ fontWeight: 'bold' }}>{mockRestaurant.rating}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>({mockRestaurant.reviews} đánh giá)</span>
+                  <span style={{ fontWeight: 'bold' }}>{restaurant.rating}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>({restaurant.reviews})</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)' }}>
                   <MapPin size={16} />
-                  <span>{mockRestaurant.distance}</span>
+                  <span>{restaurant.distance}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)' }}>
                   <Clock size={16} />
-                  <span>{mockRestaurant.time}</span>
+                  <span>{restaurant.time}</span>
                 </div>
               </div>
             </div>
@@ -107,7 +110,7 @@ const RestaurantDetail = () => {
             <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '15px', position: 'sticky', top: '90px', boxShadow: 'var(--shadow-sm)' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '15px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>Thực đơn</h3>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                {mockRestaurant.categories.map(cat => (
+                {restaurant.categories && restaurant.categories.map(cat => (
                   <li key={cat.id} style={{ marginBottom: '5px' }}>
                     <button 
                       onClick={() => setActiveTab(cat.id)}
@@ -124,6 +127,9 @@ const RestaurantDetail = () => {
                     </button>
                   </li>
                 ))}
+                {!restaurant.categories || restaurant.categories.length === 0 ? (
+                  <li style={{color: '#999', fontSize: '14px', fontStyle: 'italic'}}>Quán chưa có món</li>
+                ) : null}
               </ul>
             </div>
           </div>
@@ -145,9 +151,14 @@ const RestaurantDetail = () => {
 
             {/* Render Danh sách món */}
             <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
-              {mockRestaurant.categories.map(cat => {
-                const items = mockRestaurant.menu[cat.id];
-                if (!items) return null;
+              {restaurant.categories && restaurant.categories.map(cat => {
+                let items = restaurant.menu[cat.id] || [];
+                
+                if (search) {
+                  items = items.filter(item => item.name.toLowerCase().includes(search.toLowerCase()));
+                }
+
+                if (items.length === 0) return null;
                 
                 // Tiêu đề phân mục
                 return (
@@ -158,24 +169,38 @@ const RestaurantDetail = () => {
                         <div key={item.id} style={{ display: 'flex', padding: '15px', border: '1px solid var(--border)', borderRadius: '8px', transition: '0.2s', backgroundColor: 'white' }} className="store-item-card">
                           
                           {/* Item Image */}
-                          {item.image ? (
-                            <img src={item.image} alt={item.name} style={{ width: '100px', height: '100px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0, marginRight: '15px' }} />
-                          ) : (
-                            <div style={{ width: '100px', height: '100px', borderRadius: '6px', backgroundColor: '#f0f0f0', flexShrink: 0, marginRight: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <span style={{ color: '#ccc', fontSize: '12px' }}>Không có ảnh</span>
-                            </div>
-                          )}
+                          <Link to={`/product/${item.id}`}>
+                            {item.image ? (
+                              <img src={getImageUrl(item.image)} alt={item.name} style={{ width: '100px', height: '100px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0, marginRight: '15px', cursor: 'pointer' }} />
+                            ) : (
+                              <div style={{ width: '100px', height: '100px', borderRadius: '6px', backgroundColor: '#f0f0f0', flexShrink: 0, marginRight: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                <span style={{ color: '#ccc', fontSize: '12px' }}>Không có ảnh</span>
+                              </div>
+                            )}
+                          </Link>
 
                           {/* Item Info */}
                           <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{item.name}</h4>
-                              <button 
-                                onClick={() => handleAddToCart(item)}
-                                style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-                              >
-                                <Plus size={18} />
-                              </button>
+                              <Link to={`/product/${item.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, cursor: 'pointer' }} onMouseOver={e => e.target.style.color='var(--primary)'} onMouseOut={e => e.target.style.color='inherit'}>
+                                  {item.name}
+                                </h4>
+                              </Link>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button 
+                                  onClick={(e) => toggleFavoriteProduct(item.id, e)}
+                                  style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: '#fff', border: '1px solid #ddd', color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                >
+                                  <Heart size={16} fill={favoriteProductIds.has(item.id) ? '#EE4D2D' : 'none'} color={favoriteProductIds.has(item.id) ? '#EE4D2D' : 'currentColor'} />
+                                </button>
+                                <button 
+                                  onClick={() => handleAddToCart(item)}
+                                  style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                                >
+                                  <Plus size={18} />
+                                </button>
+                              </div>
                             </div>
                             
                             <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '5px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -187,11 +212,6 @@ const RestaurantDetail = () => {
                                 <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '16px' }}>
                                   {item.price.toLocaleString()}đ
                                 </span>
-                                {item.oldPrice && (
-                                  <span style={{ textDecoration: 'line-through', color: '#999', fontSize: '13px', marginLeft: '8px' }}>
-                                    {item.oldPrice.toLocaleString()}đ
-                                  </span>
-                                )}
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '12px' }}>
                                 <ThumbsUp size={12} /> {item.sold} Đã bán

@@ -4,10 +4,11 @@ import axiosInstance from '../utils/axiosInstance';
 import { toast } from 'react-toastify';
 
 // ── Giá trị mặc định khi tạo/sửa món ──────────────────────────────────────
-const EMPTY_FORM = { name: '', price: '', description: '', image: '', status: 'available' };
+const EMPTY_FORM = { name: '', price: '', description: '', image: '', status: 'available', categoryId: '' };
 
 const MerchantProducts = () => {
   const [products, setProducts]   = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [modal, setModal]         = useState(null);   // null | 'create' | { ...product }
   const [form, setForm]           = useState(EMPTY_FORM);
@@ -24,12 +25,21 @@ const MerchantProducts = () => {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  const fetchCategories = async () => {
+    try {
+      const res = await axiosInstance.get('/admin/categories');
+      if (res.data && res.data.success) {
+        setCategories(res.data.categories.filter(c => c.isActive));
+      }
+    } catch { console.error('Không tải được danh mục'); }
+  };
+
+  useEffect(() => { fetchProducts(); fetchCategories(); }, []);
 
   // ── Mở modal ────────────────────────────────────────────────────────────
   const openCreate = () => { setForm(EMPTY_FORM); setImageFile(null); setImagePreview(''); setModal('create'); };
   const openEdit   = (p) => {
-    setForm({ name: p.name, price: p.price, description: p.description, image: p.image, status: p.status });
+    setForm({ name: p.name, price: p.price, description: p.description, image: p.image, status: p.status, categoryId: p.categoryId || '' });
     setImageFile(null);
     // Ảnh cũ từ DB: nếu là path /uploads/... thì prefix backend URL
     setImagePreview(p.image ? (p.image.startsWith('http') ? p.image : `http://localhost:5000${p.image}`) : '');
@@ -210,6 +220,17 @@ const MerchantProducts = () => {
                     style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }}
                   />
                 )}
+              </div>
+
+              {/* Danh mục */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={labelStyle}>Danh mục phân loại</label>
+                <select value={form.categoryId || ''} onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))} style={inputStyle}>
+                  <option value="">-- Chọn danh mục --</option>
+                  {categories.map(c => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Trạng thái */}

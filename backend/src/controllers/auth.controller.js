@@ -139,6 +139,11 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không chính xác' });
     }
 
+    // Chặn luồng nếu user bị khóa
+    if (user.status === 'locked') {
+      return res.status(403).json({ success: false, message: 'Tài khoản của bạn đã bị khóa do vi phạm chính sách hệ thống' });
+    }
+
     sendTokenResponse(user, 200, res);
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

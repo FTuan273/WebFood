@@ -12,6 +12,11 @@ const Restaurants = () => {
   const [selectedRejectId, setSelectedRejectId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
+  // Modal State cho Revenue
+  const [showRevModal, setShowRevModal] = useState(false);
+  const [revData, setRevData] = useState(null);
+  const [revLoading, setRevLoading] = useState(false);
+
   const fetchRestaurants = () => {
     setLoading(true);
     const endpoint = activeTab === 'pending'
@@ -66,6 +71,23 @@ const Restaurants = () => {
     updateStatus(selectedRejectId, 'rejected', rejectReason);
   };
 
+  const fetchRevenue = async (id) => {
+    setShowRevModal(true);
+    setRevLoading(true);
+    try {
+      const res = await axios.get(`http://localhost:5000/api/admin/restaurants/${id}/revenue`);
+      if (res.data.success) {
+        setRevData(res.data.data);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Không thể tải dữ liệu doanh thu');
+      setShowRevModal(false);
+    } finally {
+      setRevLoading(false);
+    }
+  };
+
   const renderPendingTab = () => {
     if (restaurants.length === 0 && !loading) {
       return (
@@ -94,9 +116,9 @@ const Restaurants = () => {
             </div>
 
             <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '10px', marginBottom: '15px', fontSize: '0.95rem', color: '#57606f', borderLeft: '4px solid #0984e3' }}>
-              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={16} color="#0984e3" /> <strong>Đại diện:</strong> {res.ownerId?.name || 'Không rõ'}</div>
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={16} color="#0984e3" /> <strong>Đại diện:</strong> {res.ownerId ? `${res.ownerId.firstName} ${res.ownerId.lastName}` : 'Không rõ'}</div>
               <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={16} color="#0984e3" /> <strong>Email:</strong> {res.ownerId?.email || 'Không rõ'}</div>
-              {res.ownerId?.phone && <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Phone size={16} color="#0984e3" /> <strong>SĐT:</strong> {res.ownerId.phone}</div>}
+              {res.ownerId?.phoneNumber && <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Phone size={16} color="#0984e3" /> <strong>SĐT:</strong> {res.ownerId.phoneNumber}</div>}
             </div>
 
             {/* Placeholder GPKD / CCCD */}
@@ -163,7 +185,7 @@ const Restaurants = () => {
             {restaurants.map((res, index) => (
               <tr key={res._id} style={{ borderBottom: '1px solid #f1f2f6', backgroundColor: index % 2 === 0 ? 'white' : '#fafbfc' }}>
                 <td style={{ padding: '15px 20px', fontWeight: '500', color: '#2b2bdc' }}>{res.name}</td>
-                <td style={{ padding: '15px 20px', color: '#57606f' }}>{res.ownerId?.name || 'Không rõ'}</td>
+                <td style={{ padding: '15px 20px', color: '#57606f' }}>{res.ownerId ? `${res.ownerId.firstName} ${res.ownerId.lastName}` : 'Không rõ'}</td>
                 <td style={{ padding: '15px 20px', color: '#57606f' }}>
                   {new Date(res.createdAt).toLocaleDateString('vi-VN')}
                 </td>
@@ -184,7 +206,7 @@ const Restaurants = () => {
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
                     <button
                       title="Xem doanh thu"
-                      onClick={() => alert(`Xem chi tiết doanh thu của ${res.name} (Đang phát triển)`)}
+                      onClick={() => fetchRevenue(res._id)}
                       style={{ padding: '8px', backgroundColor: '#f1f2f6', color: '#2f3542', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'background 0.2s' }}
                       onMouseOver={e => e.currentTarget.style.backgroundColor = '#dfe4ea'}
                       onMouseOut={e => e.currentTarget.style.backgroundColor = '#f1f2f6'}
@@ -292,6 +314,57 @@ const Restaurants = () => {
                 Xác nhận Từ chối
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revenue Modal */}
+      {showRevModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '500px', maxWidth: '90%', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', position: 'relative' }}>
+            <button onClick={() => setShowRevModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', cursor: 'pointer', color: '#888' }}><X size={20} /></button>
+            <h3 style={{ margin: '0 0 20px 0', color: '#2f3542', fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Building size={24} color="#0984e3" /> Doanh Thu Đối Tác
+            </h3>
+            
+            {revLoading || !revData ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>Đang tổng hợp dữ liệu...</div>
+            ) : (
+              <div>
+                <h4 style={{ color: '#0984e3', margin: '0 0 20px 0', fontSize: '1.2rem', textAlign: 'center' }}>{revData.restaurantName}</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '25px' }}>
+                  <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '10px', textAlign: 'center', border: '1px solid #e1e5ea' }}>
+                    <div style={{ fontSize: '0.9rem', color: '#636e72', marginBottom: '8px', fontWeight: '600' }}>TỔNG DOANH THU</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#2ed573' }}>
+                      {revData.totalRevenue.toLocaleString('vi-VN')}₫
+                    </div>
+                  </div>
+                  <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '10px', textAlign: 'center', border: '1px solid #e1e5ea' }}>
+                    <div style={{ fontSize: '0.9rem', color: '#636e72', marginBottom: '8px', fontWeight: '600' }}>TỔNG ĐƠN HÀNG</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#2f3542' }}>
+                      {revData.totalOrders}
+                    </div>
+                  </div>
+                </div>
+                
+                <h5 style={{ margin: '0 0 15px 0', color: '#57606f', fontSize: '1.05rem', borderBottom: '2px solid #f1f2f6', paddingBottom: '8px' }}>Giao dịch gần đây</h5>
+                {revData.recentOrders && revData.recentOrders.length > 0 ? (
+                  <div style={{ maxHeight: '200px', overflowY: 'auto', paddingRight: '5px' }}>
+                    {revData.recentOrders.map(order => (
+                      <div key={order._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 10px', borderBottom: '1px solid #f1f2f6' }}>
+                        <div>
+                          <div style={{ fontWeight: '500', color: '#2f3542' }}>{order.customerId ? `${order.customerId.firstName} ${order.customerId.lastName}` : 'Khách vãng lai'}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(order.createdAt).toLocaleDateString('vi-VN')} {new Date(order.createdAt).toLocaleTimeString('vi-VN')}</div>
+                        </div>
+                        <div style={{ fontWeight: 'bold', color: '#2ed573' }}>+{(order.totalPrice || 0).toLocaleString('vi-VN')}₫</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>Chưa có đơn hàng nào chốt hoàn thành</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

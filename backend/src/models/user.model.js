@@ -58,6 +58,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '' // URL ảnh đại diện, để trống nếu chưa thiết lập
     },
+    status: {
+      type: String,
+      enum: ['active', 'locked'],
+      default: 'active'
+    },
     address: {
       type: String,
       default: '' // Địa chỉ giao hàng mặc định của NTD

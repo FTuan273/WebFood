@@ -16,10 +16,10 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = /jpeg|jpg|png|webp|gif/;
+  const allowed = /jpeg|jpg|png|webp|gif|avif|svg/;
   const ok = allowed.test(path.extname(file.originalname).toLowerCase())
            && allowed.test(file.mimetype);
-  ok ? cb(null, true) : cb(new Error('Chỉ chấp nhận file ảnh (jpg, png, webp, gif)'));
+  ok ? cb(null, true) : cb(new Error('Chỉ chấp nhận file ảnh (jpg, png, webp, gif, avif, svg)'));
 };
 
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }); // max 5MB

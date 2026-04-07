@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { ChevronRight, CreditCard, Smartphone } from 'lucide-react';
+import { ChevronRight, CreditCard, Smartphone, Tag, CheckCircle } from 'lucide-react';
 import PaymentDetails from '../components/PaymentDetails';
 import axiosInstance from '../utils/axiosInstance';
 
@@ -11,53 +11,80 @@ const SHIP_FEE = 40000;
 
 const Checkout = () => {
   const { user } = useAuth();
-  const { cartItems, cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal, clearCart, appliedVoucher, applyVoucher, removeVoucher } = useCart();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [useMomo, setUseMomo] = useState(false);
 
+  // Voucher state
+  const [voucherCode, setVoucherCode] = useState('');
+  const [voucherLoading, setVoucherLoading] = useState(false);
+
   useEffect(() => {
     if (paymentMethod !== 'bank') setUseMomo(false);
   }, [paymentMethod]);
-  
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  const calculateTotal = () => {
-    return cartTotal; // Có thể cộng thêm phí ship ở đây
+  const handleApplyVoucher = async () => {
+    setVoucherLoading(true);
+    await applyVoucher(voucherCode.trim().toUpperCase(), user);
+    setVoucherLoading(false);
   };
 
-  const grandTotal = () => calculateTotal() + SHIP_FEE;
+  const handleRemoveVoucher = () => {
+    removeVoucher();
+    setVoucherCode('');
+  };
+
+  const grandTotal = () => {
+    const discount = appliedVoucher ? appliedVoucher.discountAmount : 0;
+    return Math.max(0, cartTotal + SHIP_FEE - discount);
+  };
 
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
 
+    if (!user) {
+      toast.error('Vui lòng đăng nhập tài khoản trước khi thanh toán!');
+      return navigate('/login');
+    }
+
     if (paymentMethod === 'momo_gateway') {
       const total = grandTotal();
-      if (total < 1000) {
-        toast.error('Số tiền thanh toán không hợp lệ');
-        return;
-      }
+      if (total < 1000) { toast.error('Số tiền thanh toán không hợp lệ'); return; }
       try {
         const { data } = await axiosInstance.post('/payment/momo/create', {
           amount: total,
           orderInfo: `Thanh toan WebFood ${Date.now()}`,
         });
-        if (data.payUrl) {
-          window.location.href = data.payUrl;
-          return;
-        }
+        if (data.payUrl) { window.location.href = data.payUrl; return; }
         toast.error('MoMo không trả về link thanh toán');
       } catch (err) {
-        toast.error(err.response?.data?.message || 'Không tạo được giao dịch MoMo. Kiểm tra backend và cấu hình MOMO_*');
+        toast.error(err.response?.data?.message || 'Không tạo được giao dịch MoMo.');
       }
       return;
     }
 
-    toast.success('Đã đặt hàng thành công!');
-    clearCart();
-    navigate('/');
+    try {
+      const res = await axiosInstance.post('/customer/orders', {
+        items: cartItems,
+        deliveryAddress: 'Giao hàng tận nơi' + (user ? ` - ${user.lastName} ${user.firstName}` : ''),
+        paymentMethod: paymentMethod === 'cod' ? 'CASH' : 'BANK',
+        voucherCode: appliedVoucher ? appliedVoucher.code : null
+      });
+
+      if (res.data.success) {
+        const discMsg = res.data.discountAmount > 0 ? ` (Đã giảm ${formatPrice(res.data.discountAmount)})` : '';
+        toast.success(`Đặt ${res.data.orders.length} đơn thành công!${discMsg}`);
+        clearCart();
+        navigate('/');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo đơn hàng!');
+    }
   };
 
   if (cartItems.length === 0) {
@@ -80,7 +107,7 @@ const Checkout = () => {
 
         <form onSubmit={handleCheckoutSubmit}>
           <div className="checkout-grid">
-            
+
             {/* Cột 1: Thông tin giao hàng */}
             <div className="checkout-col checkout-info">
               <h3 className="checkout-title">Thông tin giao hàng</h3>
@@ -101,7 +128,7 @@ const Checkout = () => {
               <div className="form-group">
                 <input type="text" className="form-control" placeholder="Họ và tên" defaultValue={user ? `${user.lastName} ${user.firstName}` : ''} required />
               </div>
-              
+
               <div className="form-group flex-group">
                 <input type="email" className="form-control" placeholder="Email" defaultValue={user?.email || ''} required />
                 <input type="tel" className="form-control" placeholder="Số điện thoại" defaultValue={user?.phoneNumber || ''} required />
@@ -150,26 +177,26 @@ const Checkout = () => {
               <div className="radio-group payment-group">
                 <label className={`radio-label ${paymentMethod === 'cod' ? 'active' : ''}`}>
                   <div className="radio-left">
-                    <input 
-                      type="radio" 
-                      name="payment" 
-                      checked={paymentMethod === 'cod'} 
-                      onChange={() => setPaymentMethod('cod')} 
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === 'cod'}
+                      onChange={() => setPaymentMethod('cod')}
                     />
-                    <div className="payment-icon"><CreditCard size={20}/></div>
+                    <div className="payment-icon"><CreditCard size={20} /></div>
                     <span>Thanh toán khi giao hàng (COD)</span>
                   </div>
                 </label>
 
                 <label className={`radio-label ${paymentMethod === 'bank' ? 'active' : ''}`}>
                   <div className="radio-left">
-                    <input 
-                      type="radio" 
-                      name="payment" 
-                      checked={paymentMethod === 'bank'} 
-                      onChange={() => setPaymentMethod('bank')} 
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === 'bank'}
+                      onChange={() => setPaymentMethod('bank')}
                     />
-                    <div className="payment-icon"><CreditCard size={20}/></div>
+                    <div className="payment-icon"><CreditCard size={20} /></div>
                     <span>Chuyển khoản qua ngân hàng</span>
                   </div>
                 </label>
@@ -220,7 +247,7 @@ const Checkout = () => {
             {/* Cột 3: Tóm tắt đơn hàng */}
             <div className="checkout-col checkout-summary">
               <h3 className="checkout-title">Đơn hàng ({cartItems.length} sản phẩm)</h3>
-              
+
               <div className="summary-items">
                 {cartItems.map(item => (
                   <div key={item.id} className="summary-item">
@@ -239,8 +266,40 @@ const Checkout = () => {
               </div>
 
               <div className="summary-discount">
-                <input type="text" className="form-control" placeholder="Nhập mã giảm giá" />
-                <button type="button" className="btn btn-outline" style={{ height: '48px' }}>Áp dụng</button>
+                {appliedVoucher ? (
+                  <div style={{ 
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    backgroundColor: '#f0fff4', border: '1px solid #2ed573', borderRadius: '8px', padding: '10px 14px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckCircle size={18} color="#2ed573" />
+                      <span style={{ fontWeight: 'bold', color: '#2f3542' }}>{appliedVoucher.code}</span>
+                      <span style={{ fontSize: '0.85rem', color: '#57606f' }}>(-{formatPrice(appliedVoucher.discountAmount)})</span>
+                    </div>
+                    <button type="button" onClick={handleRemoveVoucher} style={{ background: 'none', border: 'none', color: '#ff4757', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
+                  </div>
+                ) : (
+                  <>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Nhập mã giảm giá" 
+                      value={voucherCode}
+                      onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyVoucher()}
+                      style={{ textTransform: 'uppercase' }}
+                    />
+                    <button 
+                      type="button" 
+                      className="btn btn-outline" 
+                      style={{ height: '48px', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      onClick={handleApplyVoucher}
+                      disabled={voucherLoading}
+                    >
+                      <Tag size={15} /> {voucherLoading ? '...' : 'Áp dụng'}
+                    </button>
+                  </>
+                )}
               </div>
 
               <div className="summary-totals">
@@ -252,12 +311,18 @@ const Checkout = () => {
                   <span>Phí vận chuyển</span>
                   <span>40.000₫</span>
                 </div>
+                {appliedVoucher && (
+                  <div className="summary-row" style={{ color: '#2ed573', fontWeight: 'bold' }}>
+                    <span>🎟️ Giảm giá ({appliedVoucher.code})</span>
+                    <span>-{formatPrice(appliedVoucher.discountAmount)}</span>
+                  </div>
+                )}
                 <div className="summary-row total-row">
                   <span>Tổng cộng</span>
                   <span className="final-price">{formatPrice(grandTotal())}</span>
                 </div>
               </div>
-              
+
               <div className="checkout-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
                 <Link to="/cart" style={{ color: 'var(--primary)', fontSize: '14px' }}>&lt; Quay về giỏ hàng</Link>
                 <button type="submit" className="btn btn-primary" style={{ padding: '15px 30px' }}>ĐẶT HÀNG</button>

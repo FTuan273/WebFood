@@ -1,6 +1,8 @@
 const Product    = require('../models/Product');
 const Restaurant = require('../models/Restaurant');
 const Order      = require('../models/Order');
+const Notification = require('../models/Notification');
+const SystemConfig = require('../models/SystemConfig');
 
 // Helper: lấy quán của merchant hiện tại
 const getRestaurant = (userId) => Restaurant.findOne({ ownerId: userId });
@@ -16,10 +18,10 @@ exports.getMyRestaurant = async (req, res) => {
 
 exports.updateMyRestaurant = async (req, res) => {
   try {
-    const { name, address, description, openingHours, image } = req.body;
+    const { name, address, locationId, description, openingHours, image } = req.body;
     const r = await Restaurant.findOneAndUpdate(
       { ownerId: req.user.id },
-      { name, address, description, openingHours, image },
+      { name, address, locationId, description, openingHours, image },
       { new: true, runValidators: true }
     );
     if (!r) return res.status(404).json({ success: false, message: 'Không tìm thấy quán' });
@@ -92,6 +94,34 @@ exports.updateOrderStatus = async (req, res) => {
       { new: true }
     );
     if (!order) return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+
+    // Tạo thông báo cho khách hàng
+    let message = '';
+    let title = 'Cập nhật đơn hàng';
+    switch (req.body.status) {
+      case 'confirmed': message = `Đơn hàng #${order._id.toString().slice(-8)} tại ${r.name} đã được xác nhận.`; break;
+      case 'preparing': message = `Quán ${r.name} đang chuẩn bị đơn hàng #${order._id.toString().slice(-8)} của bạn.`; break;
+      case 'delivering': message = `Đơn hàng #${order._id.toString().slice(-8)} đang được giao tới bạn!`; break;
+      case 'completed': message = `Đơn hàng #${order._id.toString().slice(-8)} đã hoàn thành. Chúc bạn ngon miệng!`; break;
+      case 'cancelled': message = `Rất tiếc, đơn hàng #${order._id.toString().slice(-8)} tại ${r.name} đã bị hủy.`; break;
+      default: message = `Đơn hàng #${order._id.toString().slice(-8)} có trạng thái mới.`;
+    }
+
+    if (req.body.status !== 'pending') {
+      await Notification.create({
+        userId: order.customerId,
+        title,
+        message,
+        type: 'order_status',
+        link: '/orders'
+      });
+    }
+
+    // Phát sóng Socket báo Merchant cập nhật thành công (Admin, Khách cũng sẽ nhận)
+    try {
+      require('../utils/socket').getIO().emit('system_orders_changed');
+    } catch(err) { console.error("Socket err on updateOrderStatus:", err); }
+
     res.json({ success: true, order });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
@@ -124,6 +154,65 @@ exports.getStats = async (req, res) => {
       });
     }
 
-    res.json({ success: true, stats: { totalOrders, totalRevenue, pending, completed, cancelled, totalProducts, last7 } });
+    // Tính toán phí thực lãnh sau chiết khấu
+    const config = await SystemConfig.findOne({ key: 'global_config' });
+    const commissionRate = config ? config.commissionRate : 15;
+    const netRevenue = totalRevenue - (totalRevenue * commissionRate / 100);
+
+    res.json({ success: true, stats: { totalOrders, totalRevenue, netRevenue, commissionRate, pending, completed, cancelled, totalProducts, last7 } });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
+
+// ── Quản lý đánh giá ──────────────────────────────────────────────────────────
+const Review = require('../models/Review');
+
+exports.getReviews = async (req, res) => {
+  try {
+    const r = await getRestaurant(req.user.id);
+    if (!r) return res.status(404).json({ success: false, message: 'Bạn chưa có quán' });
+
+    // Lấy tất cả sản phẩm của quán
+    const products = await Product.find({ restaurantId: r._id }, '_id name image').lean();
+    const productIds = products.map(p => p._id);
+
+    // Lấy toàn bộ reviews kèm thông tin user và sản phẩm
+    const reviews = await Review.find({ product: { $in: productIds } })
+      .populate('user', 'name avatar')
+      .populate('product', 'name image')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Tính rating trung bình tổng quán
+    const avgRating = reviews.length > 0
+      ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+      : 0;
+
+    // Thống kê phân bố sao (1 đến 5)
+    const starDistribution = [1, 2, 3, 4, 5].map(star => ({
+      star,
+      count: reviews.filter(r => r.rating === star).length
+    }));
+
+    // Rating trung bình theo từng món
+    const productStats = products.map(p => {
+      const pReviews = reviews.filter(r => r.product?._id?.toString() === p._id.toString());
+      const avg = pReviews.length > 0
+        ? (pReviews.reduce((s, r) => s + r.rating, 0) / pReviews.length).toFixed(1)
+        : null;
+      return { ...p, reviewCount: pReviews.length, avgRating: avg };
+    }).filter(p => p.reviewCount > 0);
+
+    res.json({
+      success: true,
+      avgRating,
+      totalReviews: reviews.length,
+      starDistribution,
+      productStats,
+      reviews
+    });
+  } catch (err) {
+    console.error('Get Reviews Error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+

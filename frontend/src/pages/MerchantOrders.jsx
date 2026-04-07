@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ClipboardList, RefreshCw } from 'lucide-react';
 import axiosInstance from '../utils/axiosInstance';
 import { toast } from 'react-toastify';
+import { io } from 'socket.io-client';
 
 // Luồng trạng thái đơn hàng
 const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'delivering', 'completed'];
@@ -27,7 +28,17 @@ const MerchantOrders = () => {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => { 
+    fetchOrders(); 
+    
+    // Đăng ký nhận sóng thời gian thực
+    const socket = io('http://localhost:5000');
+    socket.on('system_orders_changed', () => {
+      fetchOrders();
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   const changeStatus = async (orderId, newStatus) => {
     try {

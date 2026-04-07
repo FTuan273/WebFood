@@ -4,7 +4,8 @@ import axiosInstance from '../utils/axiosInstance';
 import { toast } from 'react-toastify';
 
 const MerchantStore = () => {
-  const [form, setForm]           = useState({ name: '', address: '', description: '', openingHours: '', image: '' });
+  const [form, setForm]           = useState({ name: '', address: '', locationId: '', description: '', openingHours: '', image: '' });
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
   const [status, setStatus]       = useState('');
@@ -12,12 +13,30 @@ const MerchantStore = () => {
   const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
-    axiosInstance.get('/merchant/restaurant').then(res => {
-      const r = res.data.restaurant;
-      setForm({ name: r.name, address: r.address, description: r.description || '', openingHours: r.openingHours, image: r.image || '' });
-      setStatus(r.status);
-      if (r.image) setImagePreview(r.image.startsWith('http') ? r.image : `http://localhost:5000${r.image}`);
-    }).catch(() => toast.error('Không tải được thông tin quán'))
+    // Tải thông tin quán
+    const fetchRestaurant = axiosInstance.get('/merchant/restaurant');
+    // Tải tùy chọn Tỉnh thành
+    const fetchLocations = axiosInstance.get('/customer/locations').catch(() => ({ data: { locations: [] } }));
+
+    Promise.all([fetchRestaurant, fetchLocations])
+      .then(([resR, resL]) => {
+        const r = resR.data.restaurant;
+        setForm({ 
+          name: r.name, 
+          address: r.address, 
+          locationId: r.locationId || '', 
+          description: r.description || '', 
+          openingHours: r.openingHours, 
+          image: r.image || '' 
+        });
+        setStatus(r.status);
+        if (r.image) setImagePreview(r.image.startsWith('http') ? r.image : `http://localhost:5000${r.image}`);
+        
+        if (resL.data && resL.data.success) {
+          setLocations(resL.data.locations);
+        }
+      })
+      .catch(() => toast.error('Không tải được thông tin quán'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -75,11 +94,29 @@ const MerchantStore = () => {
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} />
           </div>
 
-          {/* Địa chỉ */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Địa chỉ *</label>
-            <input type="text" required value={form.address}
-              onChange={e => setForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} />
+          <div style={{ display: 'flex', gap: '16px', marginBottom: 16 }}>
+            {/* Tỉnh / Thành phố */}
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Tỉnh / Thành phố *</label>
+              <select 
+                required 
+                value={form.locationId} 
+                onChange={e => setForm(f => ({ ...f, locationId: e.target.value }))} 
+                style={inputStyle}
+              >
+                <option value="">-- Chọn khu vực --</option>
+                {locations.map(loc => (
+                  <option key={loc._id} value={loc._id}>{loc.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Địa chỉ */}
+            <div style={{ flex: 2 }}>
+              <label style={labelStyle}>Địa chỉ chi tiết *</label>
+              <input type="text" required value={form.address} placeholder="VD: Số 123 Đường Nam Kỳ Khởi Nghĩa"
+                onChange={e => setForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} />
+            </div>
           </div>
 
           {/* Giờ hoạt động */}

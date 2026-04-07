@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { UtensilsCrossed, LayoutDashboard, LogOut, ClipboardList, Store, BarChart2 } from 'lucide-react';
+import { UtensilsCrossed, LayoutDashboard, LogOut, ClipboardList, Store, BarChart2, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const MerchantLayout = () => {
@@ -24,6 +24,7 @@ const MerchantLayout = () => {
           <NavLink to="/merchant/products" style={navStyle}><UtensilsCrossed size={18} /> Thực đơn</NavLink>
           <NavLink to="/merchant/store"    style={navStyle}><Store size={18} /> Thông tin quán</NavLink>
           <NavLink to="/merchant/stats"    style={navStyle}><BarChart2 size={18} /> Thống kê</NavLink>
+          <NavLink to="/merchant/reviews"  style={navStyle}><Star size={18} /> Đánh giá</NavLink>
         </nav>
 
         <div onClick={handleLogout} style={{ padding: '20px', borderTop: '1px solid #2d2d44', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', color: '#aaa', fontSize: '0.9rem' }}>

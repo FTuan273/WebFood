@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Store, Tag, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Store, Tag, LogOut, MapPin, Image as ImageIcon, Wallet, PackageOpen, Gift } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AdminLayout = () => {
@@ -28,6 +28,21 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink to="/admin/categories" style={navStyle}>
             <Tag size={20} /> Danh mục
+          </NavLink>
+          <NavLink to="/admin/locations" style={navStyle}>
+            <MapPin size={20} /> Điểm bán
+          </NavLink>
+          <NavLink to="/admin/banners" style={navStyle}>
+            <ImageIcon size={20} /> Quảng Cáo
+          </NavLink>
+          <NavLink to="/admin/finances" style={navStyle}>
+            <Wallet size={20} /> Tài Chính & Nợ
+          </NavLink>
+          <NavLink to="/admin/orders" style={navStyle}>
+            <PackageOpen size={20} /> Cứu Hộ Đơn Hàng
+          </NavLink>
+          <NavLink to="/admin/vouchers" style={navStyle}>
+            <Gift size={20} /> Vouchers Toàn Sàn
           </NavLink>
         </nav>
         

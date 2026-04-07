@@ -13,7 +13,7 @@
  * @version 2.0.0
  */
 
-const jwt  = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 
 // ─── Middleware 1: Xác thực JWT ───────────────────────────────────────────────
@@ -58,6 +58,14 @@ exports.protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'Tài khoản không tồn tại. Vui lòng đăng nhập lại'
+      });
+    }
+
+    // Nếu tài khoản bị khóa, chặn mọi truy cập
+    if (req.user.status === 'locked') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn đã bị khóa do vi phạm chính sách hệ thống'
       });
     }
 

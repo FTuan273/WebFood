@@ -3,7 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Share2, Plus, Minus, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { formatPrice, getImageUrl } from '../utils/helpers';
+import { getImageUrl } from '../utils/imageUrl';
+import { useCart } from '../context/CartContext';
+import { useFavorites } from '../context/FavoriteContext';
+
+// Function to format price
+const formatPrice = (price) => {
+  if (!price) return '';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+};
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -13,6 +21,8 @@ const ProductDetail = () => {
 
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('desc');
+  const { addToCart } = useCart();
+  const { favoriteProductIds, toggleFavoriteProduct } = useFavorites();
 
   // Review Form States
   const [rating, setRating] = useState(5);
@@ -45,8 +55,14 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
+    addToCart({ 
+      id: product._id, 
+      name: product.name, 
+      price: product.price, 
+      image: product.image, 
+      restaurantId: product.restaurantId 
+    }, quantity);
     toast.success(`Đã thêm ${quantity} phần ${product.name} vào giỏ hàng!`);
-    // NOTE: Call cart context API here
   };
 
   const handleSubmitReview = async (e) => {

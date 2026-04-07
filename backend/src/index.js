@@ -13,10 +13,15 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 const mongoose = require('mongoose');
+const http    = require('http'); // Nạp lõi HTTP
 
-// ─── Khởi tạo ứng dụng Express ───────────────────────────────────────────────
+// ─── Khởi tạo ứng dụng Express & Bọc server ──────────────────────────────────
 const app  = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Khởi tạo Socket.IO đi kèm server
+require('./utils/socket').init(server);
 
 // ─── Middleware toàn cục ─────────────────────────────────────────────────────
 // Cho phép tất cả các Origin gọi API (trong môi trường Dev)
@@ -57,6 +62,7 @@ app.get('/', (req, res) => {
 });
 
 // ─── Khởi động Server ────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+  console.log(`⚡ Socket.io đã sẵn sàng lắng nghe sự kiện.`);
 });
