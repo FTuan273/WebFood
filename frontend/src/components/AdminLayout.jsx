@@ -1,8 +1,12 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Store, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Store, Tag, LogOut, MapPin, Image as ImageIcon, Wallet, PackageOpen, Gift } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const AdminLayout = () => {
+  const { logout } = useAuth();
+  const handleLogout = () => { logout(); window.location.href = '/login'; };
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f1f2f6', fontFamily: 'Inter, sans-serif' }}>
       {/* Sidebar */}
@@ -22,9 +26,27 @@ const AdminLayout = () => {
           <NavLink to="/admin/restaurants" style={navStyle}>
             <Store size={20} /> Duyệt Quán Ăn
           </NavLink>
+          <NavLink to="/admin/categories" style={navStyle}>
+            <Tag size={20} /> Danh mục
+          </NavLink>
+          <NavLink to="/admin/locations" style={navStyle}>
+            <MapPin size={20} /> Điểm bán
+          </NavLink>
+          <NavLink to="/admin/banners" style={navStyle}>
+            <ImageIcon size={20} /> Quảng Cáo
+          </NavLink>
+          <NavLink to="/admin/finances" style={navStyle}>
+            <Wallet size={20} /> Tài Chính & Nợ
+          </NavLink>
+          <NavLink to="/admin/orders" style={navStyle}>
+            <PackageOpen size={20} /> Cứu Hộ Đơn Hàng
+          </NavLink>
+          <NavLink to="/admin/vouchers" style={navStyle}>
+            <Gift size={20} /> Vouchers Toàn Sàn
+          </NavLink>
         </nav>
         
-        <div style={{ padding: '20px', borderTop: '1px solid #57606f', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', color: '#ced6e0', transition: 'color 0.2s' }}>
+        <div onClick={handleLogout} style={{ padding: '20px', borderTop: '1px solid #57606f', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', color: '#ced6e0', transition: 'color 0.2s' }}>
           <LogOut size={20} /> Đăng xuất
         </div>
       </aside>
